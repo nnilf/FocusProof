@@ -30,6 +30,8 @@ Click any block on a report's timeline to see why it was classified that way.
 
 **Two monitors with the webcam on?** Go to **Settings → Webcam calibration** and look at each screen when asked. Looking at either screen then counts as focused.
 
+**A laptop, TV or phone nearby?** Add it under **Distraction areas** in the same place. Looking at it then counts as distracted. You can also choose how looking away from all screens is counted (Ignore, Neutral or Distracted).
+
 ## What is ALT?
 
 Every few seconds, FocusProof labels what you're doing:

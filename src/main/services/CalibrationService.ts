@@ -1,4 +1,4 @@
-import type { CameraState, FocusZone } from '@shared/types';
+import type { CameraState, FocusZone, FocusZoneKind } from '@shared/types';
 import type { CameraSample, FocusAnalyzer } from '../monitoring/focus/FocusAnalyzer';
 
 const CALIBRATION_SAMPLES_PER_SECOND = 5;
@@ -67,7 +67,7 @@ export class CalibrationService {
     }
   }
 
-  async capture(displayId: number, label: string): Promise<FocusZone & { samples: number }> {
+  async capture(kind: FocusZoneKind, displayId: number | null, label: string): Promise<FocusZone & { samples: number }> {
     if (!this.running) throw new Error('Calibration has not been started.');
     const samples: CameraSample[] = [];
     this.deps.focus.rawListener = (s) => {
@@ -79,6 +79,7 @@ export class CalibrationService {
       throw new Error('Your face was not detected clearly. Check the lighting and that you are in view, then try again.');
     }
     return {
+      kind,
       displayId,
       label,
       yawDeg: median(samples.map((s) => s.yawDeg ?? 0)),

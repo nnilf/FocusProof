@@ -11,6 +11,7 @@ import type {
 import { addDays, dateKey, lastNDays, startOfDay, startOfWeek } from '@shared/dates';
 import type { AssignmentRepository } from '../db/repositories/assignments';
 import type { SessionRepository } from '../db/repositories/sessions';
+import { MIN_WORDS_FOR_RATE } from './InsightService';
 
 interface Joined {
   session: Session;
@@ -198,7 +199,7 @@ export class AnalyticsService {
     const totalProductiveMs = rows.reduce((n, r) => n + r.metrics.productiveMs, 0);
     const netWords = rows.reduce((n, r) => n + r.metrics.netWords, 0);
     const wordsAdded = rows.reduce((n, r) => n + r.metrics.wordsAdded, 0);
-    const minutesPer100Words = netWords > 0 ? (totalProductiveMs / 60_000 / netWords) * 100 : null;
+    const minutesPer100Words = netWords >= MIN_WORDS_FOR_RATE ? (totalProductiveMs / 60_000 / netWords) * 100 : null;
 
     const target = assignment.targetWordCount;
     const wordProgress = target ? Math.min(1, assignment.currentWordCount / target) : null;

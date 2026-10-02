@@ -64,10 +64,10 @@ describe('away detection (regression: away from desk with Word focused)', () => 
     const absentFor = 48; // 4 minutes
     const session = frames(working + absentFor, (i) =>
       i < working
-        ? { input: { keyboardEvents: 10, mouseEvents: 5, activeSeconds: 5, idleMs: 100 }, camera: { samples: 10, presence: 1, focus: 1, lookingAwayMs: 0 } }
+        ? { input: { keyboardEvents: 10, mouseEvents: 5, activeSeconds: 5, idleMs: 100 }, camera: { samples: 10, presence: 1, focus: 1, lookingAwayMs: 0, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null } }
         : {
             input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: (i - working + 1) * STEP },
-            camera: { samples: 10, presence: 0, focus: 0, lookingAwayMs: STEP },
+            camera: { samples: 10, presence: 0, focus: 0, lookingAwayMs: STEP, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null },
           },
     );
     const { classes, altMs } = replay(session);
@@ -78,7 +78,7 @@ describe('away detection (regression: away from desk with Word focused)', () => 
   it('does not mark a short absence (under the threshold) as away', () => {
     const session = frames(8, () => ({
       input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: 20_000 },
-      camera: { samples: 10, presence: 0, focus: 0, lookingAwayMs: STEP },
+      camera: { samples: 10, presence: 0, focus: 0, lookingAwayMs: STEP, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null },
     }));
     expect(replay(session).classes).not.toContain('away');
   });
@@ -86,7 +86,7 @@ describe('away detection (regression: away from desk with Word focused)', () => 
   it('ignores webcam absence while the user is typing (camera misdetection)', () => {
     const session = frames(30, () => ({
       input: { keyboardEvents: 20, mouseEvents: 5, activeSeconds: 5, idleMs: 100 },
-      camera: { samples: 10, presence: 0, focus: 0, lookingAwayMs: STEP },
+      camera: { samples: 10, presence: 0, focus: 0, lookingAwayMs: STEP, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null },
     }));
     expect(replay(session).classes).not.toContain('away');
   });
@@ -96,7 +96,7 @@ describe('away detection (regression: away from desk with Word focused)', () => 
       frames(1, () => ({
         window: { ...word, relevance: 0.8 },
         input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: 30_000 },
-        camera: { samples: 10, presence: 0, focus: 0, lookingAwayMs: STEP },
+        camera: { samples: 10, presence: 0, focus: 0, lookingAwayMs: STEP, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null },
       }))[0]!,
       { ...INITIAL_ENGINE_STATE, contextEma: 0 },
       settings,

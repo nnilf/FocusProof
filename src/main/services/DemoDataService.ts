@@ -190,7 +190,7 @@ export class DemoDataService {
                 : { keyboardEvents: 0, mouseEvents: activity === 'reading' ? Math.floor(rand() * 4) : 0, activeSeconds: activity === 'reading' ? Math.floor(rand() * 4) : 0, idleMs: activity === 'reading' ? Math.floor(rand() * 40_000) : idle },
               screen: { analyzerId: 'rules-v1', relevance: activity === 'distracted' ? 0 : editing ? 1 : null, visualChange: activity === 'away' ? 0 : rand() * 0.4, note: null },
               camera: camera
-                ? { samples: 60, presence: activity === 'away' ? 0 : 0.9 + rand() * 0.1, focus: activity === 'distracted' ? 0.5 + rand() * 0.3 : 0.7 + rand() * 0.3, lookingAwayMs: 0 }
+                ? { samples: 60, presence: activity === 'away' ? 0 : 0.9 + rand() * 0.1, focus: activity === 'distracted' ? 0.5 + rand() * 0.3 : 0.7 + rand() * 0.3, lookingAwayMs: 0, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null }
                 : null,
               documents: {
                 changeEvents: added + removed > 0 ? 1 : 0,

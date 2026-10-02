@@ -141,7 +141,7 @@ export function AnalyticsPage() {
             />
           </div>
           <p className="small muted" style={{ marginTop: 8 }}>
-            {data.totals.totalNetWords > 0 && data.totals.totalAltMs > 0
+            {data.totals.totalNetWords >= 100 && data.totals.totalAltMs > 0
               ? `${Math.round((h(data.totals.totalAltMs) * 60 * 100) / data.totals.totalNetWords)} min ALT per 100 words`
               : ''}
           </p>

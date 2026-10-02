@@ -8,11 +8,15 @@ export interface MonitoringToggles {
   documents: boolean;
 }
 
+export type OffScreenPolicy = 'ignore' | 'neutral' | 'distracted';
+
 export interface EngineSettings {
   inactivityThresholdSec: number;
   awayThresholdSec: number;
   /** Webcam-confirmed absence (with no input) longer than this is away, regardless of awayThresholdSec. */
   absenceThresholdSec: number;
+  /** How looking away from every calibrated screen (with no input) is treated. */
+  offScreenPolicy: OffScreenPolicy;
   productiveThreshold: number;
   neutralThreshold: number;
   /** Proportion (0–1) of neutral time counted towards Actual Learning Time. */
@@ -28,12 +32,16 @@ export interface AppRules {
   distractingKeywords: string[];
 }
 
+export type FocusZoneKind = 'screen' | 'distraction';
+
 /**
- * Head pose recorded while the user looked at the centre of one display. Looking towards any
- * calibrated zone counts as attending to the screen (supports multi-monitor setups).
+ * Head pose recorded while the user looked at the centre of a screen they work on, or at a
+ * distraction area (e.g. a separate laptop, TV or phone stand).
  */
 export interface FocusZone {
-  displayId: number;
+  kind: FocusZoneKind;
+  /** The display this screen zone belongs to; null for areas that are not displays of this PC. */
+  displayId: number | null;
   label: string;
   yawDeg: number;
   pitchDeg: number;

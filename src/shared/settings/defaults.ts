@@ -5,6 +5,7 @@ export const DEFAULT_SETTINGS: Settings = {
     inactivityThresholdSec: 120,
     awayThresholdSec: 300,
     absenceThresholdSec: 60,
+    offScreenPolicy: 'neutral',
     productiveThreshold: 0.6,
     neutralThreshold: 0.35,
     neutralContribution: 0.5,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Camera, Check } from 'lucide-react';
+import { Camera, Check, X } from 'lucide-react';
 import type { DisplayInfo } from '@shared/ipc/contract';
 import type { FocusZone } from '@shared/types';
 import { call } from '../lib/api';
@@ -56,11 +56,23 @@ function DisplayLayout(props: { displays: DisplayInfo[]; target: number | null; 
   );
 }
 
+type Mode = 'screens' | 'area';
+
+const toStored = (z: FocusZone): FocusZone => ({
+  kind: z.kind,
+  displayId: z.displayId,
+  label: z.label,
+  yawDeg: z.yawDeg,
+  pitchDeg: z.pitchDeg,
+});
+
 export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => void }) {
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
+  const [mode, setMode] = useState<Mode | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [index, setIndex] = useState(0);
   const [captured, setCaptured] = useState<FocusZone[]>([]);
+  const [areaName, setAreaName] = useState('Laptop');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,45 +85,63 @@ export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => vo
     return () => void call('calibration:stop', {});
   }, [phase === 'idle']); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const target = displays[index] ?? null;
+  const screens = props.zones.filter((z) => z.kind === 'screen');
+  const areas = props.zones.filter((z) => z.kind === 'distraction');
+  const target = mode === 'screens' ? (displays[index] ?? null) : null;
   const nameOf = (d: DisplayInfo): string => `display ${displays.indexOf(d) + 1}${d.primary ? ' (main)' : ''}`;
+  const fail = (err: unknown): void => setError(err instanceof Error ? err.message : String(err));
 
-  const start = async (): Promise<void> => {
+  const save = async (zones: FocusZone[]): Promise<void> => {
+    await call('settings:update', { camera: { zones: zones.map(toStored) } });
+    props.onSaved();
+  };
+
+  const begin = async (next: Mode): Promise<void> => {
     setError(null);
     setCaptured([]);
     setIndex(0);
+    setMode(next);
     setPhase('starting');
     try {
       await call('calibration:start', {});
       setPhase('ready');
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      fail(err);
       setPhase('idle');
+      setMode(null);
     }
   };
 
+  const finish = async (zones: FocusZone[]): Promise<void> => {
+    setPhase('saving');
+    await save(zones);
+    await call('calibration:stop', {});
+    setPhase('idle');
+    setMode(null);
+  };
+
   const capture = async (): Promise<void> => {
-    if (!target) return;
     setError(null);
     setPhase('capturing');
     try {
-      const zone = await call('calibration:capture', { displayId: target.id, label: nameOf(target) });
+      if (mode === 'area') {
+        const label = areaName.trim() || 'Distraction area';
+        const zone = await call('calibration:capture', { kind: 'distraction', displayId: null, label });
+        await finish([...props.zones.filter((z) => !(z.kind === 'distraction' && z.label === label)), zone]);
+        return;
+      }
+      if (!target) return;
+      const zone = await call('calibration:capture', { kind: 'screen', displayId: target.id, label: nameOf(target) });
       const next = [...captured.filter((z) => z.displayId !== zone.displayId), zone];
       setCaptured(next);
       if (index + 1 < displays.length) {
         setIndex(index + 1);
         setPhase('ready');
       } else {
-        setPhase('saving');
-        await call('settings:update', {
-          camera: { zones: next.map(({ displayId, label, yawDeg, pitchDeg }) => ({ displayId, label, yawDeg, pitchDeg })) },
-        });
-        await call('calibration:stop', {});
-        setPhase('idle');
-        props.onSaved();
+        await finish([...next, ...areas]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      fail(err);
       setPhase('ready');
     }
   };
@@ -119,32 +149,37 @@ export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => vo
   const cancel = async (): Promise<void> => {
     await call('calibration:stop', {});
     setPhase('idle');
-  };
-
-  const clear = async (): Promise<void> => {
-    await call('settings:update', { camera: { zones: [] } });
-    props.onSaved();
+    setMode(null);
   };
 
   const running = phase !== 'idle';
+  const doneIds = new Set(captured.map((z) => z.displayId).filter((id): id is number => id !== null));
+
   return (
     <div style={{ display: 'grid', gap: 14 }}>
-      <p className="secondary small">Look at each screen so any of them counts as focused.</p>
-      <DisplayLayout displays={displays} target={running ? (target?.id ?? null) : null} done={new Set(captured.map((z) => z.displayId))} />
+      <DisplayLayout displays={displays} target={target?.id ?? null} done={doneIds} />
 
       {running ? (
         <div style={{ display: 'grid', gap: 10 }}>
           <span className="camera-on">
             <Camera size={14} aria-hidden /> {phase === 'starting' ? 'Starting camera…' : 'Camera on'}
           </span>
-          {target && phase !== 'starting' && phase !== 'saving' && (
+          {phase !== 'starting' && phase !== 'saving' && (
             <p>
-              {index + 1}/{displays.length}: look at the <b>centre of {nameOf(target)}</b> and press capture (3 s).
+              {mode === 'screens' && target ? (
+                <>
+                  {index + 1}/{displays.length}: look at the <b>centre of {nameOf(target)}</b> and press capture (3 s).
+                </>
+              ) : (
+                <>
+                  Look at the <b>centre of {areaName.trim() || 'the area'}</b> and press capture (3 s).
+                </>
+              )}
             </p>
           )}
           <div className="row">
             <button className="btn primary" disabled={phase !== 'ready'} onClick={() => void capture()}>
-              {phase === 'capturing' ? 'Hold still…' : `Capture ${target ? nameOf(target) : ''}`}
+              {phase === 'capturing' ? 'Hold still…' : 'Capture'}
             </button>
             <button className="btn" onClick={() => void cancel()}>
               Cancel
@@ -152,29 +187,55 @@ export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => vo
           </div>
         </div>
       ) : (
-        <div className="row">
-          <button className="btn primary" onClick={() => void start()} disabled={displays.length === 0}>
-            {props.zones.length ? 'Recalibrate' : 'Calibrate'}
-          </button>
-          {props.zones.length > 0 && (
-            <button className="btn" onClick={() => void clear()}>
-              Clear
-            </button>
-          )}
-        </div>
+        <>
+          <div style={{ display: 'grid', gap: 6 }}>
+            <h3>Screens</h3>
+            <div className="row">
+              <button className="btn primary" onClick={() => void begin('screens')} disabled={displays.length === 0}>
+                {screens.length ? 'Recalibrate' : 'Calibrate'}
+              </button>
+              {screens.length > 0 ? (
+                <span className="small secondary">{screens.map((z) => z.label).join(', ')}</span>
+              ) : (
+                displays.length > 1 && (
+                  <span className="small" style={{ color: 'var(--warning)' }}>
+                    Not calibrated
+                  </span>
+                )
+              )}
+            </div>
+          </div>
+          <div style={{ display: 'grid', gap: 6 }}>
+            <h3>Distraction areas</h3>
+            {areas.length > 0 && (
+              <div className="chip-list">
+                {areas.map((z) => (
+                  <span className="chip" key={z.label}>
+                    {z.label}
+                    <button aria-label={`Remove ${z.label}`} onClick={() => void save(props.zones.filter((x) => x !== z))}>
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="row">
+              <input
+                className="input"
+                style={{ width: 180 }}
+                value={areaName}
+                onChange={(e) => setAreaName(e.target.value)}
+                aria-label="Area name"
+                placeholder="e.g. Laptop"
+              />
+              <button className="btn" onClick={() => void begin('area')} disabled={!areaName.trim()}>
+                Add area
+              </button>
+            </div>
+          </div>
+        </>
       )}
       <ErrorText error={error} />
-
-      {props.zones.length > 0 && !running && (
-        <div className="small secondary">
-          Calibrated: {props.zones.map((z) => z.label).join(', ')}
-        </div>
-      )}
-      {props.zones.length === 0 && displays.length > 1 && !running && (
-        <p className="small" style={{ color: 'var(--warning)' }}>
-          Not calibrated
-        </p>
-      )}
     </div>
   );
 }

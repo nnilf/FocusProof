@@ -7,30 +7,67 @@ export interface CameraSample {
   pitchDeg: number | null;
 }
 
-/** Straight ahead of the camera; used when no calibration exists. */
-const DEFAULT_ZONES: readonly Pick<FocusZone, 'yawDeg' | 'pitchDeg'>[] = [{ yawDeg: 0, pitchDeg: 0 }];
+/** Anything with a head-pose centre; zones without a kind are screens. */
+export type ZoneLike = Pick<FocusZone, 'yawDeg' | 'pitchDeg'> & Partial<Pick<FocusZone, 'kind' | 'label'>>;
 
-/** Angular distance from a head pose to the nearest screen zone. Pitch is weighted slightly higher. */
-export function angleToNearestZone(
+/** Straight ahead of the camera; used as the screen when no screen has been calibrated. */
+const DEFAULT_SCREEN: ZoneLike = { yawDeg: 0, pitchDeg: 0, kind: 'screen', label: 'Screen' };
+
+const isScreen = (z: ZoneLike): boolean => (z.kind ?? 'screen') === 'screen';
+
+function withDefaultScreen(zones: readonly ZoneLike[]): readonly ZoneLike[] {
+  return zones.some(isScreen) ? zones : [DEFAULT_SCREEN, ...zones];
+}
+
+/** Angular distance from a head pose to a zone centre. Pitch is weighted slightly higher. */
+function angleTo(yawDeg: number, pitchDeg: number, z: ZoneLike): number {
+  return Math.max(Math.abs(yawDeg - z.yawDeg), Math.abs(pitchDeg - z.pitchDeg) * 1.2);
+}
+
+/** Angular distance from a head pose to the nearest screen zone. */
+export function angleToNearestZone(yawDeg: number, pitchDeg: number, zones: readonly ZoneLike[]): number {
+  return Math.min(...withDefaultScreen(zones).filter(isScreen).map((z) => angleTo(yawDeg, pitchDeg, z)));
+}
+
+export type GazeTarget = 'screen' | 'distraction' | 'offscreen';
+
+/**
+ * What the user is facing: the nearest calibrated zone (screen or distraction area), or
+ * "offscreen" when every zone is further than the look-away tolerance. Because the nearest zone
+ * wins, an area just below a monitor (e.g. a laptop) is separated from it at the midpoint.
+ */
+export function classifyGaze(
   yawDeg: number,
   pitchDeg: number,
-  zones: readonly Pick<FocusZone, 'yawDeg' | 'pitchDeg'>[],
-): number {
-  const list = zones.length ? zones : DEFAULT_ZONES;
-  return Math.min(...list.map((z) => Math.max(Math.abs(yawDeg - z.yawDeg), Math.abs(pitchDeg - z.pitchDeg) * 1.2)));
+  zones: readonly ZoneLike[],
+  lookAwayDeg: number,
+): { target: GazeTarget; zone: ZoneLike | null } {
+  let nearest: ZoneLike | null = null;
+  let best = Infinity;
+  for (const z of withDefaultScreen(zones)) {
+    const d = angleTo(yawDeg, pitchDeg, z);
+    if (d < best) {
+      best = d;
+      nearest = z;
+    }
+  }
+  if (!nearest || best > lookAwayDeg) return { target: 'offscreen', zone: null };
+  return { target: isScreen(nearest) ? 'screen' : 'distraction', zone: nearest };
 }
 
 /**
  * Attention estimate from head pose: facing any calibrated screen scores 1, turning beyond the
- * look-away angle from every screen scores 0. This approximates attention; it is not gaze tracking.
+ * look-away angle from every screen scores 0, and facing a distraction area scores 0. This
+ * approximates attention; it is not gaze tracking.
  */
 export function attentionFromPose(
   yawDeg: number | null,
   pitchDeg: number | null,
   lookAwayDeg: number,
-  zones: readonly Pick<FocusZone, 'yawDeg' | 'pitchDeg'>[] = [],
+  zones: readonly ZoneLike[] = [],
 ): number {
   if (yawDeg === null || pitchDeg === null) return 0.5;
+  if (classifyGaze(yawDeg, pitchDeg, zones, lookAwayDeg).target === 'distraction') return 0;
   const angle = angleToNearestZone(yawDeg, pitchDeg, zones);
   const full = lookAwayDeg * 0.4;
   if (angle <= full) return 1;
@@ -85,11 +122,30 @@ export class FocusAnalyzer {
     const msPerSample = 1000 / this.samplesPerSecond;
     const lookingAway =
       this.samples.length - present.length + attention.filter((a) => a < 0.3).length;
+
+    let distraction = 0;
+    let offscreen = 0;
+    const areaCounts = new Map<string, number>();
+    for (const s of present) {
+      if (s.yawDeg === null || s.pitchDeg === null) continue;
+      const gaze = classifyGaze(s.yawDeg, s.pitchDeg, this.zones, this.lookAwayDeg);
+      if (gaze.target === 'offscreen') offscreen++;
+      if (gaze.target === 'distraction') {
+        distraction++;
+        const label = gaze.zone?.label ?? 'distraction area';
+        areaCounts.set(label, (areaCounts.get(label) ?? 0) + 1);
+      }
+    }
+    const topArea = [...areaCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
     const obs: CameraObservation = {
       samples: this.samples.length,
       presence: present.length / this.samples.length,
       focus: attention.length ? attention.reduce((a, b) => a + b, 0) / attention.length : 0,
       lookingAwayMs: Math.round(lookingAway * msPerSample),
+      distractionRatio: present.length ? distraction / present.length : 0,
+      offScreenRatio: present.length ? offscreen / present.length : 0,
+      distractionLabel: topArea,
     };
     this.lastFocus = obs.presence * obs.focus;
     this.samples = [];

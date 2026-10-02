@@ -1,6 +1,9 @@
 import type { Insight, SessionMetrics } from '@shared/types';
 
 const fmtMin = (ms: number): string => `${Math.round(ms / 60_000)} min`;
+
+/** Below this, a per-500-words rate is a wild extrapolation, so actual figures are shown instead. */
+export const MIN_WORDS_FOR_RATE = 100;
 const fmtHours = (ms: number): string => `${(ms / 3_600_000).toFixed(1)} h`;
 const fmtClock = (ts: number): string =>
   new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
@@ -20,9 +23,12 @@ export function buildInsights(input: InsightInput): Insight[] {
   const { metrics: m } = input;
   const out: Insight[] = [];
 
-  if (m.netWords > 0 && m.productiveMs > 0) {
+  if (m.netWords >= MIN_WORDS_FOR_RATE && m.productiveMs > 0) {
     const per500 = (m.productiveMs / m.netWords) * 500;
     out.push({ id: 'words-rate', tone: 'info', text: `${fmtMin(per500)} of productive time per 500 net words this session.` });
+  } else if (m.netWords !== 0 && m.productiveMs > 0) {
+    const sign = m.netWords > 0 ? '+' : '';
+    out.push({ id: 'words-rate', tone: 'info', text: `${sign}${m.netWords} net words in ${fmtMin(m.productiveMs)} of productive time.` });
   }
 
   if (input.assignmentTotalAltMs !== null && input.assignmentName) {

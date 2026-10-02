@@ -4,15 +4,18 @@ const probability = z.number().min(0).max(1);
 const nullableInt = z.number().int().min(0).nullable();
 
 export const focusZoneSchema = z.object({
-  displayId: z.number().int(),
+  // Calibrations saved before distraction areas existed were all screens.
+  kind: z.enum(['screen', 'distraction']).default('screen'),
+  displayId: z.number().int().nullable(),
   label: z.string().max(200),
   yawDeg: z.number().min(-90).max(90),
   pitchDeg: z.number().min(-90).max(90),
 });
 
 export const calibrationCaptureSchema = z.object({
-  displayId: z.number().int(),
-  label: z.string().max(200),
+  kind: z.enum(['screen', 'distraction']),
+  displayId: z.number().int().nullable(),
+  label: z.string().trim().min(1).max(200),
 });
 
 export const monitoringTogglesSchema = z.object({
@@ -70,6 +73,7 @@ export const settingsPatchSchema = z.object({
       inactivityThresholdSec: z.number().int().min(10).max(3600),
       awayThresholdSec: z.number().int().min(30).max(7200),
       absenceThresholdSec: z.number().int().min(10).max(1800),
+      offScreenPolicy: z.enum(['ignore', 'neutral', 'distracted']),
       productiveThreshold: probability,
       neutralThreshold: probability,
       neutralContribution: probability,

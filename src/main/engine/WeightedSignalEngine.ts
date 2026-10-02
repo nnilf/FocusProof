@@ -18,6 +18,8 @@ const ABSENT_PRESENCE = 0.25;
 const LOOKING_AWAY_FOCUS = 0.4;
 const PARTIAL_FOCUS = 0.7;
 const LOW_INPUT = 0.2;
+/** Share of an interval's webcam samples needed to say where the user was looking. */
+const GAZE_MAJORITY = 0.5;
 
 const pct = (v: number): string => `${Math.round(v * 100)}%`;
 const minutes = (ms: number): string => {
@@ -168,6 +170,23 @@ export class WeightedSignalEngine implements LearningTimeEngine {
       return score;
     }
 
+    // Where the user is looking only decides the outcome when nothing else shows they are working.
+    const lowInput = (ctx.signals.inputActivityScore ?? 0) < LOW_INPUT;
+    const cam = ctx.frame.camera;
+    let offScreenCapped = false;
+    if (cam && cam.samples > 0 && lowInput && ctx.docChanges === 0) {
+      if (cam.distractionRatio >= GAZE_MAJORITY) {
+        add('override', 'looking-at-distraction', `Looking at ${cam.distractionLabel ?? 'a distraction area'}`);
+        return Math.min(score, belowNeutral);
+      }
+      if (cam.offScreenRatio >= GAZE_MAJORITY && settings.offScreenPolicy !== 'ignore') {
+        add('override', 'looking-off-screen', 'Looking away from all screens');
+        if (settings.offScreenPolicy === 'distracted') return Math.min(score, belowNeutral);
+        score = Math.min(score, Math.max(0, settings.productiveThreshold - 0.01));
+        offScreenCapped = true;
+      }
+    }
+
     const idle = ctx.idleMs ?? 0;
     if (ctx.idleMs !== null && idle >= ctx.inactivityMs && ctx.docChanges === 0 && !ctx.relevantContent) {
       score = Math.min(score, belowNeutral);
@@ -176,9 +195,8 @@ export class WeightedSignalEngine implements LearningTimeEngine {
     }
 
     // Reading grace: relevant material with little input is reading, not inactivity, unless the
-    // webcam shows nobody is there.
-    const lowInput = (ctx.signals.inputActivityScore ?? 0) < LOW_INPUT;
-    if (ctx.relevantContent && !ctx.absent && idle < ctx.awayMs && score < settings.neutralThreshold) {
+    // webcam shows nobody is there or that they are looking elsewhere.
+    if (ctx.relevantContent && !ctx.absent && !offScreenCapped && idle < ctx.awayMs && score < settings.neutralThreshold) {
       score = settings.neutralThreshold;
       add(
         'override',

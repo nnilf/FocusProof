@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Settings, SettingsPatch, WeightKey } from '@shared/types';
+import type { OffScreenPolicy, Settings, SettingsPatch, WeightKey } from '@shared/types';
 import { WEIGHT_KEYS } from '@shared/types';
 import { call } from '../lib/api';
 import { useApi } from '../hooks/useApi';
@@ -146,6 +146,17 @@ export function SettingsPage() {
           <div id="calibration" className="grid cols-2" style={{ alignItems: 'start' }}>
             <CameraCalibration zones={remote.data?.camera.zones ?? []} onSaved={remote.reload} />
             <div style={{ display: 'grid', gap: 14 }}>
+              <Field label="Looking away from all screens">
+                <select
+                  className="select"
+                  value={e.offScreenPolicy}
+                  onChange={(ev) => setEngine({ offScreenPolicy: ev.target.value as OffScreenPolicy })}
+                >
+                  <option value="ignore">Ignore</option>
+                  <option value="neutral">Neutral at most</option>
+                  <option value="distracted">Distracted</option>
+                </select>
+              </Field>
               <Field label="Look-away tolerance">
                 <Slider
                   label="Look-away tolerance"

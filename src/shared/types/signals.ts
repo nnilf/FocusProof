@@ -39,6 +39,12 @@ export interface CameraObservation {
   /** Mean attention of samples with a face present, 0–1. */
   focus: number;
   lookingAwayMs: number;
+  /** Fraction of face-present samples looking at a calibrated distraction area. */
+  distractionRatio: number;
+  /** Fraction of face-present samples looking away from every calibrated screen and area. */
+  offScreenRatio: number;
+  /** The distraction area looked at most, if any. */
+  distractionLabel: string | null;
 }
 
 export interface DocumentObservation {

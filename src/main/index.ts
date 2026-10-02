@@ -191,7 +191,7 @@ async function bootstrap(): Promise<void> {
         }));
       },
       'calibration:start': () => calibration.start(),
-      'calibration:capture': (req) => calibration.capture(req.displayId, req.label),
+      'calibration:capture': (req) => calibration.capture(req.kind, req.displayId, req.label),
       'calibration:stop': () => calibration.stop(),
       'privacy:deleteAll': () => {
         if (sessionManager.activeSessionId) throw new Error('End the running session first');

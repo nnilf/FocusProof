@@ -69,7 +69,10 @@ export interface IpcContract {
   'privacy:deleteAll': { req: Record<string, never>; res: void };
   'displays:list': { req: Record<string, never>; res: DisplayInfo[] };
   'calibration:start': { req: Record<string, never>; res: void };
-  'calibration:capture': { req: { displayId: number; label: string }; res: FocusZone & { samples: number } };
+  'calibration:capture': {
+    req: { kind: FocusZone['kind']; displayId: number | null; label: string };
+    res: FocusZone & { samples: number };
+  };
   'calibration:stop': { req: Record<string, never>; res: void };
 }
 
