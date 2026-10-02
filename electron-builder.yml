@@ -1,0 +1,21 @@
+appId: com.focusproof.app
+productName: FocusProof
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+asarUnpack:
+  - node_modules/better-sqlite3/**
+extraResources:
+  - from: resources/models
+    to: models
+  - from: resources/win32
+    to: win32
+win:
+  target: nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+npmRebuild: false

@@ -1,0 +1,123 @@
+import { z } from 'zod';
+
+const probability = z.number().min(0).max(1);
+const nullableInt = z.number().int().min(0).nullable();
+
+export const focusZoneSchema = z.object({
+  displayId: z.number().int(),
+  label: z.string().max(200),
+  yawDeg: z.number().min(-90).max(90),
+  pitchDeg: z.number().min(-90).max(90),
+});
+
+export const calibrationCaptureSchema = z.object({
+  displayId: z.number().int(),
+  label: z.string().max(200),
+});
+
+export const monitoringTogglesSchema = z.object({
+  webcam: z.boolean(),
+  screenAnalysis: z.boolean(),
+  activeWindow: z.boolean(),
+  inputActivity: z.boolean(),
+  documents: z.boolean(),
+});
+
+export const targetSchema = z.object({
+  path: z.string().min(1).max(2048),
+  kind: z.enum(['file', 'folder']),
+});
+
+export const assignmentInputSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  module: z.string().trim().max(200),
+  description: z.string().max(5000),
+  deadline: z.number().int().nullable(),
+  targetWordCount: nullableInt,
+  currentWordCount: z.number().int().min(0),
+  estimatedHours: z.number().min(0).max(10000).nullable(),
+  notes: z.string().max(20000),
+  targets: z.array(targetSchema).max(100),
+});
+
+export const idSchema = z.object({ id: z.number().int().positive() });
+export const updateAssignmentSchema = z.object({ id: z.number().int().positive(), input: assignmentInputSchema });
+export const archiveSchema = z.object({ id: z.number().int().positive(), archived: z.boolean() });
+export const listAssignmentsSchema = z.object({ includeArchived: z.boolean() });
+export const pickPathsSchema = z.object({ folders: z.boolean() });
+
+export const startSessionSchema = z.object({
+  assignmentId: z.number().int().positive().nullable(),
+  targets: z.array(targetSchema).max(100),
+  monitoring: monitoringTogglesSchema,
+});
+
+export const listSessionsSchema = z.object({
+  assignmentId: z.number().int().positive().nullable(),
+  limit: z.number().int().min(1).max(1000),
+});
+
+export const analyticsQuerySchema = z.object({
+  rangeDays: z.number().int().min(1).max(3650),
+  assignmentId: z.number().int().positive().nullable(),
+});
+
+const appList = z.array(z.string().trim().min(1).max(200)).max(500);
+
+export const settingsPatchSchema = z.object({
+  engine: z
+    .object({
+      inactivityThresholdSec: z.number().int().min(10).max(3600),
+      awayThresholdSec: z.number().int().min(30).max(7200),
+      absenceThresholdSec: z.number().int().min(10).max(1800),
+      productiveThreshold: probability,
+      neutralThreshold: probability,
+      neutralContribution: probability,
+      weights: z
+        .object({
+          relevance: probability,
+          input: probability,
+          document: probability,
+          camera: probability,
+          context: probability,
+        })
+        .partial(),
+    })
+    .partial()
+    .optional(),
+  analysisIntervalSec: z.number().int().min(2).max(60).optional(),
+  monitoring: monitoringTogglesSchema.partial().optional(),
+  apps: z
+    .object({
+      productiveApps: appList,
+      distractingApps: appList,
+      excludedApps: appList,
+      productiveKeywords: appList,
+      distractingKeywords: appList,
+    })
+    .partial()
+    .optional(),
+  privacy: z.object({ storeWindowTitles: z.boolean() }).partial().optional(),
+  camera: z
+    .object({
+      samplesPerSecond: z.number().min(0.2).max(10),
+      lookAwayAngleDeg: z.number().min(5).max(80),
+      zones: z.array(focusZoneSchema).max(8),
+    })
+    .partial()
+    .optional(),
+});
+
+export const cameraSampleSchema = z.object({
+  ts: z.number(),
+  facePresent: z.boolean(),
+  yawDeg: z.number().nullable(),
+  pitchDeg: z.number().nullable(),
+});
+
+export const cameraStatusSchema = z.object({
+  state: z.enum(['starting', 'active', 'unavailable']),
+  message: z.string().max(500).nullable(),
+});
+
+export const emptySchema = z.object({}).strict();
