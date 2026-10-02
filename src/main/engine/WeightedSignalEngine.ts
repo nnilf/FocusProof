@@ -248,6 +248,8 @@ export class WeightedSignalEngine implements LearningTimeEngine {
         add('negative', 'camera-looking-away', `Looking away from the screen (focus ${pct(signals.focusScore ?? 0)})`);
       else if ((signals.focusScore ?? 0) < PARTIAL_FOCUS)
         add('neutral', 'camera-partial', `Present, partly facing the screen (focus ${pct(signals.focusScore ?? 0)})`);
+      else if (frame.camera?.workAreaLabel)
+        add('positive', 'camera-work-area', `Looking at ${frame.camera.workAreaLabel} (focus ${pct(signals.focusScore ?? 0)})`);
       else add('positive', 'camera-focused', `Present and facing the screen (focus ${pct(signals.focusScore ?? 0)})`);
     }
 

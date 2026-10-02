@@ -56,7 +56,50 @@ function DisplayLayout(props: { displays: DisplayInfo[]; target: number | null; 
   );
 }
 
-type Mode = 'screens' | 'area';
+type Mode = 'screens' | 'work' | 'distraction';
+type AreaMode = Exclude<Mode, 'screens'>;
+
+/** A named list of non-display areas with an add form, used for work and distraction areas. */
+function AreaSection(props: {
+  title: string;
+  areas: FocusZone[];
+  name: string;
+  placeholder: string;
+  onName: (name: string) => void;
+  onAdd: () => void;
+  onRemove: (zone: FocusZone) => void;
+}) {
+  return (
+    <div style={{ display: 'grid', gap: 6 }}>
+      <h3>{props.title}</h3>
+      {props.areas.length > 0 && (
+        <div className="chip-list">
+          {props.areas.map((z) => (
+            <span className="chip" key={z.label}>
+              {z.label}
+              <button aria-label={`Remove ${z.label}`} onClick={() => props.onRemove(z)}>
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="row">
+        <input
+          className="input"
+          style={{ width: 180 }}
+          value={props.name}
+          onChange={(e) => props.onName(e.target.value)}
+          aria-label={`${props.title} name`}
+          placeholder={props.placeholder}
+        />
+        <button className="btn" onClick={props.onAdd} disabled={!props.name.trim()}>
+          Add area
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const toStored = (z: FocusZone): FocusZone => ({
   kind: z.kind,
@@ -72,7 +115,7 @@ export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => vo
   const [phase, setPhase] = useState<Phase>('idle');
   const [index, setIndex] = useState(0);
   const [captured, setCaptured] = useState<FocusZone[]>([]);
-  const [areaName, setAreaName] = useState('Laptop');
+  const [names, setNames] = useState<Record<AreaMode, string>>({ work: 'Notepad', distraction: 'Laptop' });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -85,8 +128,10 @@ export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => vo
     return () => void call('calibration:stop', {});
   }, [phase === 'idle']); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const screens = props.zones.filter((z) => z.kind === 'screen');
-  const areas = props.zones.filter((z) => z.kind === 'distraction');
+  const screens = props.zones.filter((z) => z.kind === 'screen' && z.displayId !== null);
+  const workAreas = props.zones.filter((z) => z.kind === 'screen' && z.displayId === null);
+  const distractions = props.zones.filter((z) => z.kind === 'distraction');
+  const areaName = mode === 'work' || mode === 'distraction' ? names[mode].trim() : '';
   const target = mode === 'screens' ? (displays[index] ?? null) : null;
   const nameOf = (d: DisplayInfo): string => `display ${displays.indexOf(d) + 1}${d.primary ? ' (main)' : ''}`;
   const fail = (err: unknown): void => setError(err instanceof Error ? err.message : String(err));
@@ -124,10 +169,12 @@ export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => vo
     setError(null);
     setPhase('capturing');
     try {
-      if (mode === 'area') {
-        const label = areaName.trim() || 'Distraction area';
-        const zone = await call('calibration:capture', { kind: 'distraction', displayId: null, label });
-        await finish([...props.zones.filter((z) => !(z.kind === 'distraction' && z.label === label)), zone]);
+      if (mode === 'work' || mode === 'distraction') {
+        const kind = mode === 'work' ? 'screen' : 'distraction';
+        const label = areaName || (mode === 'work' ? 'Work area' : 'Distraction area');
+        const zone = await call('calibration:capture', { kind, displayId: null, label });
+        const replaced = (z: FocusZone): boolean => z.kind === kind && z.displayId === null && z.label === label;
+        await finish([...props.zones.filter((z) => !replaced(z)), zone]);
         return;
       }
       if (!target) return;
@@ -138,7 +185,7 @@ export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => vo
         setIndex(index + 1);
         setPhase('ready');
       } else {
-        await finish([...next, ...areas]);
+        await finish([...next, ...props.zones.filter((z) => z.displayId === null)]);
       }
     } catch (err) {
       fail(err);
@@ -172,7 +219,7 @@ export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => vo
                 </>
               ) : (
                 <>
-                  Look at the <b>centre of {areaName.trim() || 'the area'}</b> and press capture (3 s).
+                  Look at the <b>centre of {areaName || 'the area'}</b> and press capture (3 s).
                 </>
               )}
             </p>
@@ -205,34 +252,24 @@ export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => vo
               )}
             </div>
           </div>
-          <div style={{ display: 'grid', gap: 6 }}>
-            <h3>Distraction areas</h3>
-            {areas.length > 0 && (
-              <div className="chip-list">
-                {areas.map((z) => (
-                  <span className="chip" key={z.label}>
-                    {z.label}
-                    <button aria-label={`Remove ${z.label}`} onClick={() => void save(props.zones.filter((x) => x !== z))}>
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="row">
-              <input
-                className="input"
-                style={{ width: 180 }}
-                value={areaName}
-                onChange={(e) => setAreaName(e.target.value)}
-                aria-label="Area name"
-                placeholder="e.g. Laptop"
-              />
-              <button className="btn" onClick={() => void begin('area')} disabled={!areaName.trim()}>
-                Add area
-              </button>
-            </div>
-          </div>
+          <AreaSection
+            title="Work areas"
+            areas={workAreas}
+            name={names.work}
+            placeholder="e.g. Notepad"
+            onName={(work) => setNames({ ...names, work })}
+            onAdd={() => void begin('work')}
+            onRemove={(z) => void save(props.zones.filter((x) => x !== z))}
+          />
+          <AreaSection
+            title="Distraction areas"
+            areas={distractions}
+            name={names.distraction}
+            placeholder="e.g. Laptop"
+            onName={(distraction) => setNames({ ...names, distraction })}
+            onAdd={() => void begin('distraction')}
+            onRemove={(z) => void save(props.zones.filter((x) => x !== z))}
+          />
         </>
       )}
       <ErrorText error={error} />

@@ -4,7 +4,7 @@ import { DEFAULT_SETTINGS } from '@shared/settings/defaults';
 import { settingsPatchSchema } from '@shared/ipc/schemas';
 import { WeightedSignalEngine } from '../../src/main/engine/WeightedSignalEngine';
 import { INITIAL_ENGINE_STATE } from '../../src/main/engine/LearningTimeEngine';
-import { attentionFromPose, classifyGaze, type ZoneLike } from '../../src/main/monitoring/focus/FocusAnalyzer';
+import { FocusAnalyzer, attentionFromPose, classifyGaze, type ZoneLike } from '../../src/main/monitoring/focus/FocusAnalyzer';
 import { buildInsights } from '../../src/main/services/InsightService';
 import { summarizeSession } from '../../src/main/engine/summary';
 
@@ -42,7 +42,7 @@ const idleInput = { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs:
 const typing = { keyboardEvents: 30, mouseEvents: 5, activeSeconds: 5, idleMs: 100 };
 
 function camera(overrides: Partial<CameraObservation>): CameraObservation {
-  return { samples: 10, presence: 1, focus: 0, lookingAwayMs: 5_000, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null, ...overrides };
+  return { samples: 10, presence: 1, focus: 0, lookingAwayMs: 5_000, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null, workAreaLabel: null, ...overrides };
 }
 
 function evaluate(cam: CameraObservation, input = idleInput, settings: EngineSettings = DEFAULT_SETTINGS.engine) {
@@ -71,6 +71,29 @@ describe('gaze rules in the engine', () => {
     expect(neutral.classification).not.toBe('productive');
     expect(neutral.reasons.some((r) => r.code === 'reading-grace')).toBe(false);
     expect(policy('ignore').reasons.some((r) => r.code === 'looking-off-screen')).toBe(false);
+  });
+});
+
+describe('work areas', () => {
+  const withNotepad: ZoneLike[] = [...zones, { kind: 'screen', displayId: null, label: 'Notepad', yawDeg: 0, pitchDeg: -42 }];
+
+  it('counts looking at a notepad as focused, separate from the laptop and main screen', () => {
+    expect(classifyGaze(1, -40, withNotepad, 25)).toMatchObject({ target: 'screen', zone: { label: 'Notepad' } });
+    expect(classifyGaze(36, -30, withNotepad, 25).zone?.label).toBe('Laptop');
+    expect(classifyGaze(2, -10, withNotepad, 25).zone?.label).toBe('display 2 (main)');
+    expect(attentionFromPose(1, -40, 25, withNotepad)).toBe(1);
+  });
+
+  it('reports the work area when it is looked at for most of an interval', () => {
+    const analyzer = new FocusAnalyzer(25, 2);
+    analyzer.configure(25, 2, withNotepad.map((z) => ({ kind: z.kind ?? 'screen', displayId: z.displayId === undefined ? 1 : z.displayId, label: z.label ?? '', yawDeg: z.yawDeg, pitchDeg: z.pitchDeg })));
+    analyzer.setStatus('active', null);
+    for (let i = 0; i < 10; i++) analyzer.record({ ts: i, facePresent: true, yawDeg: 0, pitchDeg: -41 });
+    const obs = analyzer.drain();
+    expect(obs?.workAreaLabel).toBe('Notepad');
+    expect(obs?.offScreenRatio).toBe(0);
+    const ev = evaluate(camera({ focus: 1, workAreaLabel: 'Notepad' }));
+    expect(ev.reasons.some((r) => r.code === 'camera-work-area' && r.text.startsWith('Looking at Notepad'))).toBe(true);
   });
 });
 

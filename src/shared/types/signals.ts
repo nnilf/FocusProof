@@ -45,6 +45,8 @@ export interface CameraObservation {
   offScreenRatio: number;
   /** The distraction area looked at most, if any. */
   distractionLabel: string | null;
+  /** A work area (e.g. notepad) looked at for most of the interval, if any. */
+  workAreaLabel: string | null;
 }
 
 export interface DocumentObservation {

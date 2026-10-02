@@ -137,7 +137,7 @@ describe('WeightedSignalEngine.evaluate', () => {
     const { evaluation } = run(
       frame({
         input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: settings.awayThresholdSec * 1000 + 1 },
-        camera: { samples: 10, presence: 1, focus: 0.9, lookingAwayMs: 0, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null },
+        camera: { samples: 10, presence: 1, focus: 0.9, lookingAwayMs: 0, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null, workAreaLabel: null },
         documents: null,
       }),
     );
@@ -148,7 +148,7 @@ describe('WeightedSignalEngine.evaluate', () => {
     let state: EngineState = INITIAL_ENGINE_STATE;
     const absent = frame({
       input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: 10_000 },
-      camera: { samples: 10, presence: 0, focus: 0, lookingAwayMs: 5_000, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null },
+      camera: { samples: 10, presence: 0, focus: 0, lookingAwayMs: 5_000, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null, workAreaLabel: null },
       documents: null,
     });
     const ticks = (settings.awayThresholdSec * 1000) / 5_000;
@@ -199,7 +199,7 @@ describe('WeightedSignalEngine.evaluate', () => {
 
   it('describes webcam focus in three bands', () => {
     const codeFor = (focus: number) =>
-      run(frame({ camera: { samples: 10, presence: 1, focus, lookingAwayMs: 0, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null } })).evaluation.reasons.find((r) =>
+      run(frame({ camera: { samples: 10, presence: 1, focus, lookingAwayMs: 0, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null, workAreaLabel: null } })).evaluation.reasons.find((r) =>
         r.code.startsWith('camera'),
       )?.code;
     expect(codeFor(0.95)).toBe('camera-focused');

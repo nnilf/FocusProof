@@ -35,8 +35,10 @@ export interface AppRules {
 export type FocusZoneKind = 'screen' | 'distraction';
 
 /**
- * Head pose recorded while the user looked at the centre of a screen they work on, or at a
- * distraction area (e.g. a separate laptop, TV or phone stand).
+ * Head pose recorded while the user looked at the centre of something on their desk:
+ * - kind 'screen' with a displayId: a monitor of this PC
+ * - kind 'screen' without a displayId: a work area such as a paper notepad
+ * - kind 'distraction': e.g. a separate laptop, TV or phone stand
  */
 export interface FocusZone {
   kind: FocusZoneKind;

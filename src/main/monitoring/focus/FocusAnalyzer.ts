@@ -8,7 +8,7 @@ export interface CameraSample {
 }
 
 /** Anything with a head-pose centre; zones without a kind are screens. */
-export type ZoneLike = Pick<FocusZone, 'yawDeg' | 'pitchDeg'> & Partial<Pick<FocusZone, 'kind' | 'label'>>;
+export type ZoneLike = Pick<FocusZone, 'yawDeg' | 'pitchDeg'> & Partial<Pick<FocusZone, 'kind' | 'label' | 'displayId'>>;
 
 /** Straight ahead of the camera; used as the screen when no screen has been calibrated. */
 const DEFAULT_SCREEN: ZoneLike = { yawDeg: 0, pitchDeg: 0, kind: 'screen', label: 'Screen' };
@@ -126,10 +126,14 @@ export class FocusAnalyzer {
     let distraction = 0;
     let offscreen = 0;
     const areaCounts = new Map<string, number>();
+    const workCounts = new Map<string, number>();
     for (const s of present) {
       if (s.yawDeg === null || s.pitchDeg === null) continue;
       const gaze = classifyGaze(s.yawDeg, s.pitchDeg, this.zones, this.lookAwayDeg);
       if (gaze.target === 'offscreen') offscreen++;
+      if (gaze.target === 'screen' && gaze.zone?.displayId === null && gaze.zone.label) {
+        workCounts.set(gaze.zone.label, (workCounts.get(gaze.zone.label) ?? 0) + 1);
+      }
       if (gaze.target === 'distraction') {
         distraction++;
         const label = gaze.zone?.label ?? 'distraction area';
@@ -137,6 +141,8 @@ export class FocusAnalyzer {
       }
     }
     const topArea = [...areaCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    const topWork = [...workCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+    const workAreaLabel = topWork && topWork[1] >= present.length / 2 ? topWork[0] : null;
 
     const obs: CameraObservation = {
       samples: this.samples.length,
@@ -146,6 +152,7 @@ export class FocusAnalyzer {
       distractionRatio: present.length ? distraction / present.length : 0,
       offScreenRatio: present.length ? offscreen / present.length : 0,
       distractionLabel: topArea,
+      workAreaLabel,
     };
     this.lastFocus = obs.presence * obs.focus;
     this.samples = [];
