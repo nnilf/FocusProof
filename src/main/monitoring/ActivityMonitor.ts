@@ -23,6 +23,8 @@ export interface ActivityMonitorConfig {
   knownPaths: ReadonlySet<string>;
   onDocumentRecord: (record: DocumentChangeRecord) => void;
   onWarning: (message: string) => void;
+  /** Read the website domain from foreground browsers (Privacy setting). */
+  readBrowserDomains: boolean;
 }
 
 /**
@@ -57,7 +59,7 @@ export class ActivityMonitor {
         if (config.monitoring.activeWindow) this.windowMonitor.record(s);
         if (config.monitoring.inputActivity) this.inputMonitor.record(s);
       });
-      source.start();
+      source.start({ readDomains: config.readBrowserDomains });
     } else if (needsHelper) {
       config.onWarning('Active-window detection is unavailable on this system; using idle time only.');
     }
@@ -103,8 +105,8 @@ export class ActivityMonitor {
     if (m.activeWindow && this.deps.activitySource) {
       const fg = this.windowMonitor.drain();
       if (fg) {
-        const cls = classifyApplication(fg.processName, fg.title, cfg.relevance);
-        window = { processName: fg.processName, title: fg.title, ...cls };
+        const cls = classifyApplication(fg.processName, fg.title, cfg.relevance, fg.domain);
+        window = { processName: fg.processName, title: fg.title, domain: fg.domain, ...cls };
       }
     }
 

@@ -45,6 +45,7 @@ export interface ActivityInterval {
   reasons: ClassificationReason[];
   processName: string | null;
   windowTitle: string | null;
+  domain: string | null;
   appCategory: AppCategory | null;
   keyboardEvents: number;
   mouseEvents: number;

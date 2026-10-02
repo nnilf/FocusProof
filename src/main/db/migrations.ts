@@ -111,4 +111,9 @@ export const MIGRATIONS: { version: number; name: string; sql: string }[] = [
       );
     `,
   },
+  {
+    version: 2,
+    name: 'interval-domain',
+    sql: `ALTER TABLE activity_intervals ADD COLUMN domain TEXT;`,
+  },
 ];

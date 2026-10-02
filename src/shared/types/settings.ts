@@ -30,6 +30,9 @@ export interface AppRules {
   excludedApps: string[];
   productiveKeywords: string[];
   distractingKeywords: string[];
+  /** Websites by domain; a rule also matches subdomains (youtube.com matches m.youtube.com). */
+  productiveDomains: string[];
+  distractingDomains: string[];
 }
 
 export type FocusZoneKind = 'screen' | 'distraction';
@@ -74,7 +77,7 @@ export interface Settings {
   analysisIntervalSec: number;
   monitoring: MonitoringToggles;
   apps: AppRules;
-  privacy: { storeWindowTitles: boolean };
+  privacy: { storeWindowTitles: boolean; readBrowserDomains: boolean };
   camera: CameraSettings;
   overlay: OverlaySettings;
 }

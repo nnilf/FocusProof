@@ -8,6 +8,7 @@ import { ChipListEditor } from '../components/ChipListEditor';
 import { CameraCalibration } from '../components/CameraCalibration';
 import { FocusIndicatorSettings } from '../components/FocusIndicatorSettings';
 import { formatPct } from '../lib/format';
+import { normaliseDomain } from '@shared/domains';
 
 const WEIGHT_LABEL: Record<WeightKey, string> = {
   relevance: 'Screen / application relevance',
@@ -212,6 +213,12 @@ export function SettingsPage() {
         </Card>
         <Card title="Ignored apps">
           <ChipListEditor values={draft.apps.excludedApps} onChange={(v) => setApps({ excludedApps: v })} placeholder="Process name" />
+        </Card>
+        <Card title="Study websites">
+          <ChipListEditor values={draft.apps.productiveDomains} onChange={(v) => setApps({ productiveDomains: v })} placeholder="e.g. moodle.myuni.ac.uk" normalise={normaliseDomain} />
+        </Card>
+        <Card title="Distracting websites">
+          <ChipListEditor values={draft.apps.distractingDomains} onChange={(v) => setApps({ distractingDomains: v })} placeholder="e.g. netflix.com" normalise={normaliseDomain} />
         </Card>
         <Card title="Productive title keywords">
           <ChipListEditor values={draft.apps.productiveKeywords} onChange={(v) => setApps({ productiveKeywords: v })} placeholder="e.g. jstor" />

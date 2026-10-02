@@ -8,6 +8,8 @@ export type AppCategory = 'productive' | 'neutral' | 'distracting' | 'excluded' 
 export interface WindowObservation {
   processName: string | null;
   title: string | null;
+  /** Website domain from the browser's address bar (e.g. "netflix.com"); never a full address. */
+  domain: string | null;
   category: AppCategory;
   /** 0–1 relevance of the foreground application; null when the app is excluded. */
   relevance: number | null;

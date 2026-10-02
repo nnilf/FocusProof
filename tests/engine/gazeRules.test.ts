@@ -37,7 +37,7 @@ describe('classifyGaze', () => {
 
 const engine = new WeightedSignalEngine();
 const T0 = 1_790_000_000_000;
-const word = { processName: 'WINWORD', title: 'Essay.docx - Word', category: 'productive' as const, relevance: 1, matchedRule: 'app: winword' };
+const word = { processName: 'WINWORD', title: 'Essay.docx - Word', domain: null, category: 'productive' as const, relevance: 1, matchedRule: 'app: winword' };
 const idleInput = { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: 20_000 };
 const typing = { keyboardEvents: 30, mouseEvents: 5, activeSeconds: 5, idleMs: 100 };
 

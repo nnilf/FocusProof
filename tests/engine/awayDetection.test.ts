@@ -10,7 +10,7 @@ const engine = new WeightedSignalEngine();
 const T0 = 1_790_000_000_000;
 const STEP = 5_000;
 
-const word = { processName: 'WINWORD', title: 'Essay.docx - Word', category: 'productive' as const, relevance: 1, matchedRule: 'app: winword' };
+const word = { processName: 'WINWORD', title: 'Essay.docx - Word', domain: null, category: 'productive' as const, relevance: 1, matchedRule: 'app: winword' };
 
 /** Replays a session the way SessionManager does, including retroactive away relabelling. */
 function replay(frames: SignalFrame[]): { classes: Classification[]; altMs: number } {

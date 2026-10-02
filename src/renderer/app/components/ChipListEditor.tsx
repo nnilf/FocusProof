@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 
-export function ChipListEditor(props: { values: string[]; onChange: (values: string[]) => void; placeholder: string }) {
+export function ChipListEditor(props: {
+  values: string[];
+  onChange: (values: string[]) => void;
+  placeholder: string;
+  normalise?: (value: string) => string;
+}) {
   const [draft, setDraft] = useState('');
   const add = (): void => {
-    const v = draft.trim();
+    const v = (props.normalise ?? ((x: string) => x.trim()))(draft);
     if (v && !props.values.some((x) => x.toLowerCase() === v.toLowerCase())) props.onChange([...props.values, v]);
     setDraft('');
   };

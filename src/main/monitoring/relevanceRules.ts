@@ -1,5 +1,6 @@
 import { basename, extname } from 'node:path';
 import type { AppCategory, AppRules, SessionTarget } from '@shared/types';
+import { findDomain } from '@shared/domains';
 
 export const BROWSERS = new Set(['chrome', 'msedge', 'firefox', 'brave', 'opera', 'vivaldi', 'arc', 'iexplore', 'chromium']);
 
@@ -40,8 +41,17 @@ export function buildAssignmentKeywords(
   return [...words];
 }
 
-/** Rule-based relevance of the foreground application; ordered from most to least specific. */
-export function classifyApplication(processName: string | null, title: string | null, ctx: RelevanceContext): AppClassification {
+/**
+ * Rule-based relevance of the foreground application, ordered from most to least specific. A
+ * website's domain beats title keywords; a title naming the assignment beats everything except
+ * excluded apps (so a lecture on YouTube about the assignment topic still counts).
+ */
+export function classifyApplication(
+  processName: string | null,
+  title: string | null,
+  ctx: RelevanceContext,
+  domain: string | null = null,
+): AppClassification {
   if (!processName) return { category: 'unknown', relevance: null, matchedRule: null };
   const proc = normaliseProcess(processName);
   const t = title ?? '';
@@ -50,6 +60,12 @@ export function classifyApplication(processName: string | null, title: string | 
 
   const assignmentHit = findKeyword(t, ctx.assignmentKeywords);
   if (assignmentHit) return { category: 'productive', relevance: 1, matchedRule: `title matches assignment "${assignmentHit}"` };
+
+  const productiveSite = findDomain(domain, ctx.rules.productiveDomains);
+  if (productiveSite) return { category: 'productive', relevance: 1, matchedRule: `site: ${domain}` };
+
+  const distractingSite = findDomain(domain, ctx.rules.distractingDomains);
+  if (distractingSite) return { category: 'distracting', relevance: 0, matchedRule: `site: ${domain}` };
 
   if (listHas(ctx.rules.distractingApps, proc)) return { category: 'distracting', relevance: 0, matchedRule: `app: ${proc}` };
 
@@ -61,6 +77,8 @@ export function classifyApplication(processName: string | null, title: string | 
   const productiveHit = findKeyword(t, ctx.rules.productiveKeywords);
   if (productiveHit) return { category: 'productive', relevance: 0.85, matchedRule: `title: "${productiveHit}"` };
 
-  if (BROWSERS.has(proc)) return { category: 'neutral', relevance: 0.5, matchedRule: 'browser, no matching rule' };
+  if (BROWSERS.has(proc)) {
+    return { category: 'neutral', relevance: 0.5, matchedRule: domain ? `site: ${domain}, no rule` : 'browser, no matching rule' };
+  }
   return { category: 'unknown', relevance: 0.4, matchedRule: null };
 }

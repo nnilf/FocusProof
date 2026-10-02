@@ -49,6 +49,7 @@ interface IntervalRow {
   idle_ms: number;
   process_name: string | null;
   window_title: string | null;
+  domain: string | null;
   app_category: AppCategory | null;
   doc_change_events: number;
   words_added: number;
@@ -188,11 +189,11 @@ export class SessionRepository {
       .prepare(
         `INSERT INTO activity_intervals (session_id, start_ts, end_ts, classification, combined_score, raw_score,
           input_score, window_relevance, screen_relevance, document_score, focus_score, presence_score, context_score,
-          visual_change, keyboard_events, mouse_events, idle_ms, process_name, window_title, app_category,
+          visual_change, keyboard_events, mouse_events, idle_ms, process_name, window_title, domain, app_category,
           doc_change_events, words_added, words_removed, lines_added, lines_removed, contributions_json, reasons_json, engine_id)
          VALUES (@sessionId, @startTs, @endTs, @classification, @combinedScore, @rawScore, @inputScore, @windowRelevance,
           @screenRelevance, @documentScore, @focusScore, @presenceScore, @contextScore, @visualChange, @kb, @mouse, @idle,
-          @processName, @windowTitle, @appCategory, @docChanges, @wordsAdded, @wordsRemoved, @linesAdded, @linesRemoved,
+          @processName, @windowTitle, @domain, @appCategory, @docChanges, @wordsAdded, @wordsRemoved, @linesAdded, @linesRemoved,
           @contributions, @reasons, @engineId)`,
       )
       .run({
@@ -215,6 +216,7 @@ export class SessionRepository {
         idle: Math.round(frame.input?.idleMs ?? 0),
         processName: frame.window?.processName ?? null,
         windowTitle: opts.storeTitle ? (frame.window?.title?.slice(0, 200) ?? null) : null,
+        domain: frame.window?.domain ?? null,
         appCategory: frame.window?.category ?? null,
         docChanges: frame.documents?.changeEvents ?? 0,
         wordsAdded: frame.documents?.wordsAdded ?? 0,
@@ -415,6 +417,7 @@ export class SessionRepository {
       reasons: parseJson<ClassificationReason[]>(r.reasons_json, []),
       processName: r.process_name,
       windowTitle: r.window_title,
+      domain: r.domain,
       appCategory: r.app_category,
       keyboardEvents: r.keyboard_events,
       mouseEvents: r.mouse_events,

@@ -84,21 +84,21 @@ const DEMO_ASSIGNMENTS: DemoAssignment[] = [
 ];
 
 const STEP_MS = 30_000;
-const NOTES_WINDOW: WindowObservation = { processName: 'Obsidian', title: 'reflection.md - Obsidian', category: 'productive', relevance: 1, matchedRule: 'app: obsidian' };
+const NOTES_WINDOW: WindowObservation = { processName: 'Obsidian', title: 'reflection.md - Obsidian', domain: null, category: 'productive', relevance: 1, matchedRule: 'app: obsidian' };
 
 const WINDOWS: Record<Activity, WindowObservation[]> = {
-  writing: [{ processName: 'WINWORD', title: 'literature-review.docx - Word', category: 'productive', relevance: 1, matchedRule: 'app: winword' }],
-  coding: [{ processName: 'Code', title: 'graph.ts - COMP2310 - Visual Studio Code', category: 'productive', relevance: 1, matchedRule: 'app: code' }],
+  writing: [{ processName: 'WINWORD', title: 'literature-review.docx - Word', domain: null, category: 'productive', relevance: 1, matchedRule: 'app: winword' }],
+  coding: [{ processName: 'Code', title: 'graph.ts - COMP2310 - Visual Studio Code', domain: null, category: 'productive', relevance: 1, matchedRule: 'app: code' }],
   reading: [
-    { processName: 'AcroRd32', title: 'Oke2017_heat_islands.pdf - Adobe Acrobat', category: 'productive', relevance: 1, matchedRule: 'app: acrord32' },
-    { processName: 'chrome', title: 'Google Scholar - Google Chrome', category: 'productive', relevance: 0.85, matchedRule: 'title: "scholar"' },
+    { processName: 'AcroRd32', title: 'Oke2017_heat_islands.pdf - Adobe Acrobat', domain: null, category: 'productive', relevance: 1, matchedRule: 'app: acrord32' },
+    { processName: 'chrome', title: 'Google Scholar - Google Chrome', domain: null, category: 'productive', relevance: 0.85, matchedRule: 'title: "scholar"' },
   ],
-  browsing: [{ processName: 'chrome', title: 'New Tab - Google Chrome', category: 'neutral', relevance: 0.5, matchedRule: 'browser, no matching rule' }],
+  browsing: [{ processName: 'chrome', title: 'New Tab - Google Chrome', domain: null, category: 'neutral', relevance: 0.5, matchedRule: 'browser, no matching rule' }],
   distracted: [
-    { processName: 'chrome', title: 'YouTube - Google Chrome', category: 'distracting', relevance: 0, matchedRule: 'title: "youtube"' },
-    { processName: 'Discord', title: 'Discord', category: 'distracting', relevance: 0, matchedRule: 'app: discord' },
+    { processName: 'chrome', title: 'YouTube - Google Chrome', domain: null, category: 'distracting', relevance: 0, matchedRule: 'title: "youtube"' },
+    { processName: 'Discord', title: 'Discord', domain: null, category: 'distracting', relevance: 0, matchedRule: 'app: discord' },
   ],
-  away: [{ processName: 'chrome', title: 'New Tab - Google Chrome', category: 'neutral', relevance: 0.5, matchedRule: null }],
+  away: [{ processName: 'chrome', title: 'New Tab - Google Chrome', domain: null, category: 'neutral', relevance: 0.5, matchedRule: null }],
 };
 
 /** Seeds realistic history by running the real engine over synthetic signal frames. */

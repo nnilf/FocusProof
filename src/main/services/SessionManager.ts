@@ -217,6 +217,7 @@ export class SessionManager {
         state.netWordsByPath.set(rec.path, entry);
       },
       onWarning: (msg) => state.warnings.add(msg),
+      readBrowserDomains: settings.privacy.readBrowserDomains,
     });
 
     this.deps.focus.reset();

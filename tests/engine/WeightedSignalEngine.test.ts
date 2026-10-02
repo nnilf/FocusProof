@@ -12,7 +12,7 @@ function frame(overrides: Partial<SignalFrame> = {}): SignalFrame {
   return {
     startTs: T0,
     endTs: T0 + 5_000,
-    window: { processName: 'code', title: 'essay.md', category: 'productive', relevance: 1, matchedRule: 'app: code' },
+    window: { processName: 'code', title: 'essay.md', domain: null, category: 'productive', relevance: 1, matchedRule: 'app: code' },
     input: { keyboardEvents: 15, mouseEvents: 3, activeSeconds: 5, idleMs: 200 },
     screen: null,
     camera: null,
@@ -114,7 +114,7 @@ describe('WeightedSignalEngine.evaluate', () => {
   it('caps distracting applications below the neutral threshold', () => {
     const { evaluation } = run(
       frame({
-        window: { processName: 'chrome', title: 'YouTube', category: 'distracting', relevance: 0, matchedRule: 'youtube' },
+        window: { processName: 'chrome', title: 'YouTube', domain: null, category: 'distracting', relevance: 0, matchedRule: 'youtube' },
         documents: { ...frame().documents!, changeEvents: 0, msSinceLastChange: null, wordsAdded: 0, wordsRemoved: 0 },
       }),
     );
@@ -163,7 +163,7 @@ describe('WeightedSignalEngine.evaluate', () => {
   it('applies the reading grace period to study material with no input', () => {
     const { evaluation } = run(
       frame({
-        window: { processName: 'chrome', title: 'JSTOR – paper.pdf', category: 'productive', relevance: 0.8, matchedRule: 'keyword: jstor' },
+        window: { processName: 'chrome', title: 'JSTOR – paper.pdf', domain: null, category: 'productive', relevance: 0.8, matchedRule: 'keyword: jstor' },
         input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: 90_000 },
         documents: { ...frame().documents!, changeEvents: 0, msSinceLastChange: null },
       }),
@@ -176,7 +176,7 @@ describe('WeightedSignalEngine.evaluate', () => {
   it('marks prolonged inactivity on a non-study app as distracted', () => {
     const { evaluation } = run(
       frame({
-        window: { processName: 'chrome', title: 'Some page', category: 'neutral', relevance: 0.5, matchedRule: null },
+        window: { processName: 'chrome', title: 'Some page', domain: null, category: 'neutral', relevance: 0.5, matchedRule: null },
         input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: settings.inactivityThresholdSec * 1000 + 1 },
         documents: { ...frame().documents!, changeEvents: 0, msSinceLastChange: null },
       }),
@@ -188,7 +188,7 @@ describe('WeightedSignalEngine.evaluate', () => {
   it('does not treat a short reading pause as inactivity', () => {
     const { evaluation } = run(
       frame({
-        window: { processName: 'chrome', title: 'Some page', category: 'neutral', relevance: 0.5, matchedRule: null },
+        window: { processName: 'chrome', title: 'Some page', domain: null, category: 'neutral', relevance: 0.5, matchedRule: null },
         input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: 30_000 },
         documents: null,
       }),

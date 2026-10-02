@@ -74,6 +74,9 @@ export function IntervalInspector(props: { block: TimelineBlock; intervals: Acti
     apps.set(key, (apps.get(key) ?? 0) + (i.endTs - i.startTs));
   }
   const topApps = [...apps.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sites = new Map<string, number>();
+  for (const i of items) if (i.domain) sites.set(i.domain, (sites.get(i.domain) ?? 0) + (i.endTs - i.startTs));
+  const topSites = [...sites.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
   const reasonCounts = new Map<string, { reason: ClassificationReason; n: number }>();
   for (const i of items)
     for (const r of i.reasons) {
@@ -95,6 +98,12 @@ export function IntervalInspector(props: { block: TimelineBlock; intervals: Acti
         <dl className="kv">
           <dt>Active application</dt>
           <dd>{topApps.map(([app, ms]) => `${app} (${formatDuration(ms)})`).join(', ') || '—'}</dd>
+          {topSites.length > 0 && (
+            <>
+              <dt>Website</dt>
+              <dd>{topSites.map(([site, ms]) => `${site} (${formatDuration(ms)})`).join(', ')}</dd>
+            </>
+          )}
           <dt>Activity level</dt>
           <dd>
             {formatScore(mean(items.map((i) => i.signals.inputActivityScore)))} ·{' '}

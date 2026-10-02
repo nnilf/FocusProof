@@ -30,9 +30,12 @@ const SOURCES: Source[] = [
   {
     key: 'activeWindow',
     title: 'Active-window monitoring',
-    collects: ['The foreground application name and window title once per second'],
-    stores: ['The dominant application per interval and a truncated window title (can be disabled below)'],
-    never: ['Window contents are not read'],
+    collects: [
+      'The foreground application name and window title once per second',
+      "For browsers, the website's domain from the address bar (can be disabled below)",
+    ],
+    stores: ['The dominant application, website domain and a truncated window title per interval'],
+    never: ['Window contents are not read', 'Full web addresses are never read beyond the domain or stored'],
   },
   {
     key: 'inputActivity',
@@ -98,6 +101,11 @@ export function PrivacyPage() {
               label="Store window titles"
               checked={data.privacy.storeWindowTitles}
               onChange={(v) => void call('settings:update', { privacy: { storeWindowTitles: v } }).then(reload)}
+            />
+            <Toggle
+              label="Read website domains from browsers"
+              checked={data.privacy.readBrowserDomains}
+              onChange={(v) => void call('settings:update', { privacy: { readBrowserDomains: v } }).then(reload)}
             />
             <p className="small secondary">
               Database location: <span className="mono">{info.data?.dataPath ?? '…'}</span>

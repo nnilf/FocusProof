@@ -7,6 +7,7 @@ const sampleSchema = z.object({
   t: z.number(),
   proc: z.string().nullable(),
   title: z.string(),
+  domain: z.string().max(253).nullable().optional(),
   idle: z.number(),
   kb: z.number(),
   ms: z.number(),
@@ -42,12 +43,15 @@ export class Win32ActivitySource {
     return () => this.listeners.delete(listener);
   }
 
-  start(): void {
+  private readDomains = false;
+
+  start(options: { readDomains: boolean } = { readDomains: this.readDomains }): void {
     if (this.child) return;
+    this.readDomains = options.readDomains;
     this.stopping = false;
     const child = spawn(
       'powershell.exe',
-      ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', this.scriptPath, '-ParentPid', String(process.pid)],
+      ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', this.scriptPath, '-ParentPid', String(process.pid), '-ReadDomains', this.readDomains ? '1' : '0'],
       { windowsHide: true },
     );
     this.child = child;

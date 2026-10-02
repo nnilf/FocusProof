@@ -98,10 +98,12 @@ export const settingsPatchSchema = z.object({
       excludedApps: appList,
       productiveKeywords: appList,
       distractingKeywords: appList,
+      productiveDomains: appList,
+      distractingDomains: appList,
     })
     .partial()
     .optional(),
-  privacy: z.object({ storeWindowTitles: z.boolean() }).partial().optional(),
+  privacy: z.object({ storeWindowTitles: z.boolean(), readBrowserDomains: z.boolean() }).partial().optional(),
   camera: z
     .object({
       samplesPerSecond: z.number().min(0.2).max(10),

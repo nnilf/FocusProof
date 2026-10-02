@@ -56,6 +56,7 @@ ALT is an estimate based on your activity. It can't measure how much you learned
 - **Screen:** only a small thumbnail is checked for changes in memory. Screenshots are never saved.
 - **Keyboard and mouse:** only *how much* you use them. Keys are never recorded.
 - **Files:** only word and line counts are saved, never the contents.
+- **Websites:** only the domain (e.g. `netflix.com`) is read from the browser's address bar, never the full address.
 
 Each source can be switched off on the **Privacy** page.
 
