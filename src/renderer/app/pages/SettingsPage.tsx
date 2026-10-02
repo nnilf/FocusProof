@@ -6,6 +6,7 @@ import { useApi } from '../hooks/useApi';
 import { Card, ErrorText, Field, Loading, PageHeader, Toggle } from '../components/ui';
 import { ChipListEditor } from '../components/ChipListEditor';
 import { CameraCalibration } from '../components/CameraCalibration';
+import { FocusIndicatorSettings } from '../components/FocusIndicatorSettings';
 import { formatPct } from '../lib/format';
 
 const WEIGHT_LABEL: Record<WeightKey, string> = {
@@ -132,6 +133,10 @@ export function SettingsPage() {
               </Field>
             ))}
           </div>
+        </Card>
+
+        <Card title="Focus indicator">
+          <FocusIndicatorSettings value={draft.overlay} onChange={(overlay) => setDraft({ ...draft, overlay })} />
         </Card>
 
         <Card title="Monitoring defaults">

@@ -84,6 +84,13 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   privacy: { storeWindowTitles: true },
   camera: { samplesPerSecond: 2, lookAwayAngleDeg: 25, zones: [] },
+  overlay: {
+    enabled: true,
+    corner: 'top-right',
+    displayId: null,
+    size: 'small',
+    details: { label: false, focusScore: false, alt: false, camera: false },
+  },
 };
 
 /** Deep-merges a validated patch into settings; arrays are replaced, not concatenated. */
@@ -99,5 +106,10 @@ export function mergeSettings(base: Settings, patch: SettingsPatch): Settings {
     apps: { ...base.apps, ...patch.apps },
     privacy: { ...base.privacy, ...patch.privacy },
     camera: { ...base.camera, ...patch.camera },
+    overlay: {
+      ...base.overlay,
+      ...patch.overlay,
+      details: { ...base.overlay.details, ...patch.overlay?.details },
+    },
   };
 }

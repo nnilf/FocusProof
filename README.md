@@ -28,6 +28,8 @@ npm run shortcut
 
 Click any block on a report's timeline to see why it was classified that way.
 
+During a session, a small dot in the corner of your screen shows your current state: **green** for productive, **blue** for neutral, a **red ring** for distracted, and **grey** for away. Change the corner, display, size and any extra details in **Settings → Focus indicator**.
+
 **Two monitors with the webcam on?** Go to **Settings → Webcam calibration** and look at each screen when asked. Looking at either screen then counts as focused.
 
 **Write on a paper notepad?** Add it under **Work areas** so looking at it counts as focused.

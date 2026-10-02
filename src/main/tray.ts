@@ -23,7 +23,7 @@ const COLORS: Record<string, [number, number, number]> = {
   idle: [120, 120, 128],
   productive: [25, 158, 112],
   neutral: [57, 135, 229],
-  distracted: [217, 89, 38],
+  distracted: [227, 73, 72],
   away: [93, 92, 88],
 };
 

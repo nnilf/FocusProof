@@ -56,6 +56,19 @@ export interface CameraSettings {
   zones: FocusZone[];
 }
 
+export type OverlayCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
+/** Small always-on-top dot showing the current classification during a session. */
+export interface OverlaySettings {
+  enabled: boolean;
+  corner: OverlayCorner;
+  /** Display to show it on; null means the main display. */
+  displayId: number | null;
+  size: 'small' | 'medium';
+  /** Optional extras next to the dot. All off by default to keep it distraction-free. */
+  details: { label: boolean; focusScore: boolean; alt: boolean; camera: boolean };
+}
+
 export interface Settings {
   engine: EngineSettings;
   analysisIntervalSec: number;
@@ -63,6 +76,7 @@ export interface Settings {
   apps: AppRules;
   privacy: { storeWindowTitles: boolean };
   camera: CameraSettings;
+  overlay: OverlaySettings;
 }
 
 export interface SettingsPatch {
@@ -72,4 +86,5 @@ export interface SettingsPatch {
   apps?: Partial<AppRules>;
   privacy?: Partial<Settings['privacy']>;
   camera?: Partial<Settings['camera']>;
+  overlay?: Partial<Omit<OverlaySettings, 'details'>> & { details?: Partial<OverlaySettings['details']> };
 }

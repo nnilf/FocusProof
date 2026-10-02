@@ -61,7 +61,7 @@ export const CLASS_COLOR_VAR: Record<Classification, string> = {
 export const CLASS_HEX: Record<Classification, string> = {
   productive: '#199e70',
   neutral: '#3987e5',
-  distracted: '#d95926',
+  distracted: '#e34948',
   away: '#5d5c58',
 };
 

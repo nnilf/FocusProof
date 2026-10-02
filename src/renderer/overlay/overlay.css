@@ -1,0 +1,46 @@
+html,
+body {
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  font: 600 12px/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #ececee;
+}
+
+#indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px;
+}
+
+/* With extra details shown, the dot sits in a small dark pill so text is readable on any wallpaper. */
+#indicator.pill {
+  padding: 5px 10px 5px 7px;
+  border-radius: 999px;
+  background: rgba(17, 18, 20, 0.86);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.dot {
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  /* Thin dark halo keeps the dot visible on light backgrounds. */
+  box-shadow: 0 0 0 2px rgba(17, 18, 20, 0.55);
+  transition: background-color 0.4s, border-color 0.4s;
+}
+
+.dot.productive { background: #199e70; }
+.dot.neutral { background: #3987e5; }
+/* Distracted is a ring, not just red, so it stays distinct for colour-blind users. */
+.dot.distracted { background: transparent; border: calc(var(--dot) * 0.28) solid #e34948; }
+.dot.away { background: #5d5c58; }
+.dot.idle { background: #5d5c58; opacity: 0.6; }
+
+.text { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.muted { color: #a9aab1; font-weight: 500; }
+.camera { display: inline-flex; color: #fab219; }

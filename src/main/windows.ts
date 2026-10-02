@@ -3,7 +3,7 @@ import { CAMERA_CHANNELS, type CameraConfig } from '@shared/ipc/camera';
 import { preloadPath } from './paths';
 import { APP_ORIGIN, devServerUrl } from './security';
 
-const secureWebPreferences = (preload: string): Electron.WebPreferences => ({
+export const secureWebPreferences = (preload: string): Electron.WebPreferences => ({
   preload,
   contextIsolation: true,
   nodeIntegration: false,
@@ -13,9 +13,9 @@ const secureWebPreferences = (preload: string): Electron.WebPreferences => ({
   spellcheck: false,
 });
 
-function pageUrl(page: 'index' | 'camera'): string {
+export function pageUrl(page: 'index' | 'camera' | 'overlay'): string {
   const dev = devServerUrl();
-  const file = page === 'index' ? 'index.html' : 'camera.html';
+  const file = `${page}.html`;
   return dev ? `${dev}/${file}` : `${APP_ORIGIN}/${file}`;
 }
 

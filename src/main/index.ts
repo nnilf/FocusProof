@@ -4,7 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { CAMERA_CHANNELS } from '@shared/ipc/camera';
 import type { IpcEventName, IpcEvents } from '@shared/ipc/contract';
-import { cameraSampleSchema, cameraStatusSchema } from '@shared/ipc/schemas';
+import { OVERLAY_CHANNELS } from '@shared/ipc/overlay';
+import { cameraSampleSchema, cameraStatusSchema, overlayResizeSchema } from '@shared/ipc/schemas';
 import type { LiveStatus } from '@shared/types';
 import { openDatabase, type Db } from './db/connection';
 import { AssignmentRepository } from './db/repositories/assignments';
@@ -25,6 +26,7 @@ import { DemoDataService } from './services/DemoDataService';
 import { ReportService } from './services/ReportService';
 import { SessionManager } from './services/SessionManager';
 import { AppTray } from './tray';
+import { OverlayWindow } from './overlay/OverlayWindow';
 import { CameraWindow, createMainWindow } from './windows';
 
 registerSchemes();
@@ -39,6 +41,7 @@ if (!app.requestSingleInstanceLock()) {
 
 let mainWindow: BrowserWindow | null = null;
 let tray: AppTray | null = null;
+let overlay: OverlayWindow | null = null;
 let db: Db | null = null;
 let quitting = false;
 
@@ -64,6 +67,7 @@ async function bootstrap(): Promise<void> {
   const cameraWindow = new CameraWindow();
   const s = settings.get();
   const focus = new FocusAnalyzer(s.camera.lookAwayAngleDeg, s.camera.samplesPerSecond);
+  overlay = new OverlayWindow(s.overlay);
 
   const helperScript = resourcePath('win32', 'activity-helper.ps1');
   const activitySource = Win32ActivitySource.isSupported(helperScript) ? new Win32ActivitySource(helperScript) : null;
@@ -90,6 +94,7 @@ async function bootstrap(): Promise<void> {
     emitLive: (status: LiveStatus | null) => {
       emit('session:live', status);
       tray?.update(status);
+      overlay?.update(status);
     },
     emitEnded: (sessionId) => {
       emit('session:ended', { sessionId });
@@ -166,10 +171,15 @@ async function bootstrap(): Promise<void> {
       'settings:get': () => settings.get(),
       'settings:update': (req) => {
         const next = settings.update(req);
+        overlay?.applySettings(next.overlay);
         emit('data:changed', { scope: 'settings' });
         return next;
       },
-      'settings:reset': () => settings.reset(),
+      'settings:reset': () => {
+        const next = settings.reset();
+        overlay?.applySettings(next.overlay);
+        return next;
+      },
       'demo:status': () => ({ hasDemoData: demo.hasDemoData() }),
       'demo:seed': () => {
         demo.seed();
@@ -217,6 +227,11 @@ async function bootstrap(): Promise<void> {
     const parsed = cameraSampleSchema.safeParse(raw);
     if (parsed.success) focus.record(parsed.data);
   });
+  ipcMain.on(OVERLAY_CHANNELS.resize, (event, raw: unknown) => {
+    if (!overlay?.isOverlayContents(event.sender)) return;
+    const parsed = overlayResizeSchema.safeParse(raw);
+    if (parsed.success) overlay.resize(parsed.data.width, parsed.data.height);
+  });
   ipcMain.on(CAMERA_CHANNELS.status, (event, raw: unknown) => {
     if (!cameraWindow.isCameraContents(event.sender)) return;
     const parsed = cameraStatusSchema.safeParse(raw);
@@ -231,6 +246,8 @@ async function bootstrap(): Promise<void> {
   mainWindow = createMainWindow();
   mainWindow.on('closed', () => {
     mainWindow = null;
+    // The indicator and camera windows must not keep the app alive once the main window closes.
+    app.quit();
   });
   tray = new AppTray(() => mainWindow);
 
@@ -241,6 +258,7 @@ async function bootstrap(): Promise<void> {
     // Keep the session marked active so it can be resumed or recovered on next launch.
     calibration.stop();
     void sessionManager.suspend().finally(() => {
+      overlay?.destroy();
       tray?.destroy();
       db?.close();
       app.quit();

@@ -22,6 +22,7 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'src/preload/index.ts'),
           camera: resolve(__dirname, 'src/preload/camera.ts'),
+          overlay: resolve(__dirname, 'src/preload/overlay.ts'),
         },
         output: { format: 'cjs', entryFileNames: '[name].js' },
       },
@@ -38,6 +39,7 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'src/renderer/index.html'),
           camera: resolve(__dirname, 'src/renderer/camera.html'),
+          overlay: resolve(__dirname, 'src/renderer/overlay.html'),
         },
       },
     },

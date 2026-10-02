@@ -110,6 +110,23 @@ export const settingsPatchSchema = z.object({
     })
     .partial()
     .optional(),
+  overlay: z
+    .object({
+      enabled: z.boolean(),
+      corner: z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right']),
+      displayId: z.number().int().nullable(),
+      size: z.enum(['small', 'medium']),
+      details: z
+        .object({ label: z.boolean(), focusScore: z.boolean(), alt: z.boolean(), camera: z.boolean() })
+        .partial(),
+    })
+    .partial()
+    .optional(),
+});
+
+export const overlayResizeSchema = z.object({
+  width: z.number().int().min(8).max(800),
+  height: z.number().int().min(8).max(200),
 });
 
 export const cameraSampleSchema = z.object({
