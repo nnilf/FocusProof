@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, type MutableRefObject, type RefObject } from 'react';
 import { FaceLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
 import type { Track } from './faceTracker';
 
@@ -43,11 +43,12 @@ function brackets(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: num
   ctx.stroke();
 }
 
-function draw(canvas: HTMLCanvasElement, track: Track | null, color: string): void {
+/** Paints the analysed video frame and its overlay together, so the outline never lags the image. */
+function draw(canvas: HTMLCanvasElement, video: HTMLVideoElement, track: Track | null, color: string): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const { width: w, height: h } = canvas;
-  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(video, 0, 0, w, h);
   const pts = track?.landmarks;
   if (!pts) return;
   const unit = w / 640;
@@ -92,12 +93,13 @@ function draw(canvas: HTMLCanvasElement, track: Track | null, color: string): vo
     ctx.fill();
   }
 
-  // Head direction: the face's forward axis, projected onto the image from the nose tip.
+  // Head direction (not eye gaze): the face's forward axis, projected onto the image from the nose
+  // tip. Kept short so a small tilt doesn't read as looking somewhere specific on the face.
   const nose = pts[NOSE_TIP];
   if (nose && track.yawDeg !== null && track.pitchDeg !== null) {
     const yaw = (track.yawDeg * Math.PI) / 180;
     const pitch = (track.pitchDeg * Math.PI) / 180;
-    const len = (x1 - x0) * 1.6;
+    const len = (x1 - x0) * 0.8;
     const sx = nose.x * w;
     const sy = nose.y * h;
     const ex = sx + Math.sin(yaw) * Math.cos(pitch) * len;
@@ -116,7 +118,7 @@ function draw(canvas: HTMLCanvasElement, track: Track | null, color: string): vo
     ctx.shadowBlur = 14 * unit;
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(ex, ey, 6 * unit, 0, Math.PI * 2);
+    ctx.arc(ex, ey, 4.5 * unit, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     ctx.strokeStyle = 'rgba(255,255,255,0.9)';
@@ -125,10 +127,14 @@ function draw(canvas: HTMLCanvasElement, track: Track | null, color: string): vo
   }
 }
 
-/** Mirrored webcam view with the face outline and head direction drawn on top. */
+/**
+ * Mirrored webcam view with the face outline and head direction drawn on top. The video element
+ * only feeds detection; the canvas shows each analysed frame with its own landmarks. Call
+ * drawRef.current(track) straight after detection, before the video moves on to a newer frame.
+ */
 export function CameraStage(props: {
   videoRef: RefObject<HTMLVideoElement | null>;
-  trackRef: RefObject<Track | null>;
+  drawRef: MutableRefObject<((track: Track) => void) | null>;
   color: string;
   children?: React.ReactNode;
 }) {
@@ -137,34 +143,28 @@ export function CameraStage(props: {
   useEffect(() => {
     colorRef.current = props.color;
   }, [props.color]);
-  const { videoRef, trackRef } = props;
+  const { videoRef, drawRef } = props;
 
   useEffect(() => {
-    let raf = 0;
-    let drawnTs = -1;
-    const loop = (): void => {
-      raf = requestAnimationFrame(loop);
+    drawRef.current = (track) => {
       const canvas = canvasRef.current;
       const video = videoRef.current;
-      const track = trackRef.current;
       if (!canvas || !video || !video.videoWidth) return;
-      // Twice the video resolution keeps the lines crisp; same aspect, so both crop alike.
+      // Twice the video resolution keeps the lines crisp.
       if (canvas.width !== video.videoWidth * 2) {
         canvas.width = video.videoWidth * 2;
         canvas.height = video.videoHeight * 2;
-        drawnTs = -1;
       }
-      if (track?.ts === drawnTs) return;
-      drawnTs = track?.ts ?? -1;
-      draw(canvas, track, colorRef.current);
+      draw(canvas, video, track, colorRef.current);
     };
-    loop();
-    return () => cancelAnimationFrame(raf);
-  }, [videoRef, trackRef]);
+    return () => {
+      drawRef.current = null;
+    };
+  }, [videoRef, drawRef]);
 
   return (
     <div className="stage">
-      <video ref={videoRef} playsInline muted />
+      <video ref={videoRef} playsInline muted aria-hidden />
       <canvas ref={canvasRef} aria-hidden />
       {props.children}
     </div>

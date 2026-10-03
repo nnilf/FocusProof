@@ -56,7 +56,7 @@ export function CheckApp() {
   const colors = useThemeColors();
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const trackRef = useRef<Track | null>(null);
+  const drawRef = useRef<((track: Track) => void) | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [view, setView] = useState<{ face: boolean; pose: Pose | null; trail: Pose[] }>({ face: false, pose: null, trail: [] });
@@ -78,7 +78,7 @@ export function CheckApp() {
             }
           : { yawDeg: track.yawDeg, pitchDeg: track.pitchDeg };
       } else smooth = null;
-      trackRef.current = { ...track, yawDeg: smooth?.yawDeg ?? null, pitchDeg: smooth?.pitchDeg ?? null };
+      drawRef.current?.({ ...track, yawDeg: smooth?.yawDeg ?? null, pitchDeg: smooth?.pitchDeg ?? null });
       if (track.ts - lastView < VIEW_MS) return;
       lastView = track.ts;
       trail = smooth ? [...trail, smooth].slice(-TRAIL) : [];
@@ -118,7 +118,7 @@ export function CheckApp() {
       </header>
       <div className="check-body">
         <div className="check-camera">
-          <CameraStage videoRef={videoRef} trackRef={trackRef} color={color}>
+          <CameraStage videoRef={videoRef} drawRef={drawRef} color={color}>
             {error ? (
               <div className="stage-empty">{error}</div>
             ) : !ready ? (
@@ -131,7 +131,7 @@ export function CheckApp() {
                 </div>
                 {view.pose && (
                   <div className="stage-readout num">
-                    <span>{direction(view.pose)}</span>
+                    <span>Head {direction(view.pose)}</span>
                     <span>Attention {formatPct(attention)}</span>
                   </div>
                 )}
