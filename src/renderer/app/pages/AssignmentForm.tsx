@@ -117,7 +117,7 @@ export function AssignmentForm(props: { initial: Assignment | null; onClose: () 
           <input className="input" type="number" min={0} value={form.currentWordCount} onChange={set('currentWordCount')} />
         </Field>
         <div className="span-2">
-          <Field label="Monitored files (.txt, .md, .docx, code)" group>
+          <Field label="Watched files (.txt, .md, .docx, code)" group>
             <TargetList targets={targets} onChange={setTargets} />
           </Field>
         </div>

@@ -36,6 +36,7 @@ const SCHEMAS: { [C in IpcChannel]: z.ZodType } = {
   'sessions:live': emptySchema,
   'sessions:list': listSessionsSchema,
   'sessions:report': idSchema,
+  'sessions:day': emptySchema,
   'sessions:delete': idSchema,
   'sessions:unfinished': emptySchema,
   'sessions:resume': idSchema,

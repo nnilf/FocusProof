@@ -63,7 +63,7 @@ export function RecoveryDialog() {
           onClick={() =>
             void act(async () => {
               await call('sessions:resume', { id: session.id });
-              navigate('/session');
+              navigate('/');
             })
           }
         >

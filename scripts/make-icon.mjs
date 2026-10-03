@@ -7,8 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { deflateSync } from 'node:zlib';
 
 const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'resources');
-const TILE = [17, 18, 20];
-const GREEN = [25, 158, 112];
+const TILE = [27, 32, 38]; // --paper (dark)
+const GREEN = [93, 181, 146]; // --c-productive (dark)
 
 /** RGBA pixels, top row first. Coordinates are in the 64-unit logo space. */
 function render(size) {

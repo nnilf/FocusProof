@@ -1,65 +1,9 @@
-import { Fragment, useEffect, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import type { Classification } from '@shared/types';
 import { CLASS_COLOR_VAR, CLASS_LABEL } from '../lib/format';
 
 export const ALT_DEFINITION =
   'Actual Learning Time: productive time plus a share of neutral time. Distracted and away time are not counted.';
-
-/** The ALT abbreviation with its definition on hover. */
-export function Alt() {
-  return (
-    <abbr className="term" title={ALT_DEFINITION}>
-      ALT
-    </abbr>
-  );
-}
-
-/** Renders a label, turning every standalone "ALT" into the explained abbreviation. */
-export function withAlt(label: ReactNode): ReactNode {
-  if (typeof label !== 'string' || !/\bALT\b/.test(label)) return label;
-  return label.split(/\b(ALT)\b/).map((part, i) => (part === 'ALT' ? <Alt key={i} /> : <Fragment key={i}>{part}</Fragment>));
-}
-
-export function Card(props: { title?: ReactNode; hint?: ReactNode; actions?: ReactNode; className?: string; children: ReactNode }) {
-  return (
-    <section className={`card ${props.className ?? ''}`}>
-      {(props.title || props.actions || props.hint) && (
-        <div className="card-header">
-          <div>
-            {props.title && <h2>{withAlt(props.title)}</h2>}
-          </div>
-          <div className="row">
-            {props.hint && <span className="hint">{props.hint}</span>}
-            {props.actions}
-          </div>
-        </div>
-      )}
-      {props.children}
-    </section>
-  );
-}
-
-export function Stat(props: { label: string; value: ReactNode; sub?: ReactNode }) {
-  return (
-    <div className="card stat">
-      <span className="stat-label">{withAlt(props.label)}</span>
-      <span className="stat-value num">{props.value}</span>
-      {props.sub !== undefined && <span className="stat-sub">{props.sub}</span>}
-    </div>
-  );
-}
-
-export function PageHeader(props: { title: string; sub?: ReactNode; actions?: ReactNode }) {
-  return (
-    <header className="page-header">
-      <div>
-        <h1>{props.title}</h1>
-        {props.sub && <p className="sub">{props.sub}</p>}
-      </div>
-      {props.actions && <div className="row">{props.actions}</div>}
-    </header>
-  );
-}
 
 export function Toggle(props: {
   label: string;
@@ -129,15 +73,6 @@ export function ClassChip(props: { classification: Classification | null }) {
       <span className="dot" style={{ background: CLASS_COLOR_VAR[props.classification] }} />
       {CLASS_LABEL[props.classification]}
     </span>
-  );
-}
-
-export function EmptyState(props: { children: ReactNode; action?: ReactNode }) {
-  return (
-    <div className="empty">
-      <div>{props.children}</div>
-      {props.action}
-    </div>
   );
 }
 

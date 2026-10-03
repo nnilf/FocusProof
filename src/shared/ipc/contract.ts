@@ -6,6 +6,7 @@ import type {
   AssignmentInput,
   AssignmentStats,
   DashboardData,
+  DaySession,
   LiveStatus,
   SessionReport,
   SessionSummaryRow,
@@ -53,6 +54,7 @@ export interface IpcContract {
   'sessions:live': { req: Record<string, never>; res: LiveStatus | null };
   'sessions:list': { req: { assignmentId: number | null; limit: number }; res: SessionSummaryRow[] };
   'sessions:report': { req: { id: number }; res: SessionReport | null };
+  'sessions:day': { req: Record<string, never>; res: DaySession[] };
   'sessions:delete': { req: { id: number }; res: void };
   'sessions:unfinished': { req: Record<string, never>; res: UnfinishedSession[] };
   'sessions:resume': { req: { id: number }; res: LiveStatus };

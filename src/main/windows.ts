@@ -1,4 +1,4 @@
-import { BrowserWindow, type WebContents } from 'electron';
+import { BrowserWindow, nativeTheme, type WebContents } from 'electron';
 import { CAMERA_CHANNELS, type CameraConfig } from '@shared/ipc/camera';
 import { preloadPath, resourcePath } from './paths';
 import { APP_ORIGIN, devServerUrl } from './security';
@@ -26,7 +26,7 @@ export function createMainWindow(): BrowserWindow {
     minWidth: 960,
     minHeight: 640,
     show: false,
-    backgroundColor: '#111214',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#1b2026' : '#eceff2',
     title: 'FocusProof',
     icon: resourcePath('icon.png'),
     autoHideMenuBar: true,

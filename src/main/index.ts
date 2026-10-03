@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { CAMERA_CHANNELS } from '@shared/ipc/camera';
+import { startOfDay } from '@shared/dates';
 import type { IpcEventName, IpcEvents } from '@shared/ipc/contract';
 import { OVERLAY_CHANNELS } from '@shared/ipc/overlay';
 import { cameraSampleSchema, cameraStatusSchema, overlayResizeSchema } from '@shared/ipc/schemas';
@@ -157,6 +158,10 @@ async function bootstrap(): Promise<void> {
         return list.map((session) => ({ session, metrics: metrics.get(session.id) ?? null }));
       },
       'sessions:report': (req) => reports.getReport(req.id),
+      'sessions:day': () =>
+        sessions
+          .list({ since: startOfDay(Date.now()), limit: 100 })
+          .map((s) => ({ sessionId: s.id, assignmentName: s.assignmentName, blocks: reports.getReport(s.id)?.timeline ?? [] })),
       'sessions:delete': (req) => {
         if (req.id === sessionManager.activeSessionId) throw new Error('End the session before deleting it');
         changed('sessions', sessions.delete(req.id));

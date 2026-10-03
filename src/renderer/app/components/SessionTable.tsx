@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { SessionSummaryRow } from '@shared/types';
-import { Alt } from './ui';
 import { formatDate, formatDuration, formatPct, formatScore, formatSigned, formatTime } from '../lib/format';
 
 type SortKey = 'date' | 'duration' | 'alt' | 'productivity';
@@ -19,7 +18,7 @@ const value = (r: SessionSummaryRow, key: SortKey): number => {
   }
 };
 
-export function SessionTable(props: { rows: SessionSummaryRow[]; compact?: boolean }) {
+export function SessionTable(props: { rows: SessionSummaryRow[]; compact?: boolean; hideAssignment?: boolean }) {
   const navigate = useNavigate();
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'date', dir: -1 });
   const rows = useMemo(
@@ -43,9 +42,9 @@ export function SessionTable(props: { rows: SessionSummaryRow[]; compact?: boole
         <thead>
           <tr>
             {header('date', 'Date')}
-            <th>Assignment</th>
+            {!props.hideAssignment && <th>Assignment</th>}
             {header('duration', 'Duration', true)}
-            {header('alt', <Alt />, true)}
+            {header('alt', 'Studied', true)}
             {header('productivity', 'Productivity', true)}
             {!props.compact && <th className="right">Focus</th>}
             {!props.compact && <th className="right">Progress</th>}
@@ -56,11 +55,13 @@ export function SessionTable(props: { rows: SessionSummaryRow[]; compact?: boole
             <tr key={session.id} className="clickable" onClick={() => navigate(`/report/${session.id}`)}>
               <td>
                 {formatDate(session.startedAt)} <span className="muted">{formatTime(session.startedAt)}</span>
-                {session.status === 'recovered' && <span className="chip" style={{ marginLeft: 6 }}>recovered</span>}
+                {session.status === 'recovered' && <span className="muted small"> (recovered)</span>}
               </td>
-              <td className="truncate" style={{ maxWidth: 260 }}>
-                {session.assignmentName ?? <span className="muted">No assignment</span>}
-              </td>
+              {!props.hideAssignment && (
+                <td className="truncate" style={{ maxWidth: 260 }}>
+                  {session.assignmentName ?? <span className="muted">Nothing specific</span>}
+                </td>
+              )}
               <td className="right">{formatDuration(metrics?.durationMs)}</td>
               <td className="right">{formatDuration(metrics?.altMs)}</td>
               <td className="right">{formatPct(metrics?.productivity)}</td>

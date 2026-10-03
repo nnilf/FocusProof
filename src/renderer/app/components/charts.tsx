@@ -1,21 +1,5 @@
-import type { ReactNode } from 'react';
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  type TooltipContentProps,
-} from 'recharts';
-
-const AXIS = { stroke: '#383940', tick: { fill: '#7b7c84', fontSize: 11 }, tickLine: false } as const;
-const GRID = { stroke: '#26272c', vertical: false } as const;
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, type TooltipContentProps } from 'recharts';
+import { useThemeColors } from '../lib/theme';
 
 export interface SeriesDef {
   key: string;
@@ -46,7 +30,6 @@ function ChartTooltip(props: TooltipContentProps<number, string> & { series: Ser
 }
 
 export function Legend(props: { series: { label: string; color: string }[] }) {
-  if (props.series.length < 2) return null;
   return (
     <div className="legend">
       {props.series.map((s) => (
@@ -59,111 +42,41 @@ export function Legend(props: { series: { label: string; color: string }[] }) {
   );
 }
 
-interface BaseChartProps {
+/**
+ * Bars per category. With `overlay`, later series are drawn on top of earlier ones at the same
+ * position (e.g. ALT over total session time) rather than side by side.
+ */
+export function BarSeriesChart(props: {
   data: object[];
   xKey: string;
   series: SeriesDef[];
   height?: number;
+  overlay?: boolean;
   xFormat?: (v: string) => string;
   yFormat?: (v: number) => string;
-  footer?: ReactNode;
-}
-
-function Frame(props: { height: number; series: SeriesDef[]; children: ReactNode; footer?: ReactNode }) {
-  return (
-    <div style={{ display: 'grid', gap: 8 }}>
-      <Legend series={props.series} />
-      <div style={{ width: '100%', height: props.height }}>
-        <ResponsiveContainer>{props.children as React.ReactElement}</ResponsiveContainer>
-      </div>
-      {props.footer}
-    </div>
-  );
-}
-
-export function BarSeriesChart(props: BaseChartProps & { stacked?: boolean }) {
-  const height = props.height ?? 220;
-  return (
-    <Frame height={height} series={props.series} footer={props.footer}>
-      <BarChart data={props.data} barGap={2} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-        <CartesianGrid {...GRID} />
-        <XAxis dataKey={props.xKey} {...AXIS} tickFormatter={props.xFormat} minTickGap={12} />
-        <YAxis {...AXIS} axisLine={false} width={44} tickFormatter={props.yFormat} />
-        <Tooltip
-          cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-          content={(p) => <ChartTooltip {...(p as TooltipContentProps<number, string>)} series={props.series} labelFormat={props.xFormat} />}
-        />
-        {props.series.map((s, i) => (
-          <Bar
-            key={s.key}
-            dataKey={s.key}
-            fill={s.color}
-            stackId={props.stacked ? 'stack' : undefined}
-            radius={!props.stacked || i === props.series.length - 1 ? [4, 4, 0, 0] : 0}
-            maxBarSize={28}
-            stroke={props.stacked ? '#17181b' : undefined}
-            strokeWidth={props.stacked ? 1 : 0}
-          />
-        ))}
-      </BarChart>
-    </Frame>
-  );
-}
-
-export function LineSeriesChart(props: BaseChartProps & { area?: boolean; yDomain?: [number, number] }) {
-  const height = props.height ?? 220;
-  const tooltip = (
-    <Tooltip
-      cursor={{ stroke: '#5d5c58' }}
-      content={(p) => <ChartTooltip {...(p as TooltipContentProps<number, string>)} series={props.series} labelFormat={props.xFormat} />}
-    />
-  );
-  if (props.area) {
-    return (
-      <Frame height={height} series={props.series} footer={props.footer}>
-        <AreaChart data={props.data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-          <CartesianGrid {...GRID} />
-          <XAxis dataKey={props.xKey} {...AXIS} tickFormatter={props.xFormat} minTickGap={16} />
-          <YAxis {...AXIS} axisLine={false} width={44} tickFormatter={props.yFormat} domain={props.yDomain} />
-          {tooltip}
-          {props.series.map((s) => (
-            <Area key={s.key} type="monotone" dataKey={s.key} stroke={s.color} strokeWidth={2} fill={s.color} fillOpacity={0.12} dot={false} activeDot={{ r: 4 }} />
-          ))}
-        </AreaChart>
-      </Frame>
-    );
-  }
-  return (
-    <Frame height={height} series={props.series} footer={props.footer}>
-      <LineChart data={props.data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-        <CartesianGrid {...GRID} />
-        <XAxis dataKey={props.xKey} {...AXIS} tickFormatter={props.xFormat} minTickGap={16} />
-        <YAxis {...AXIS} axisLine={false} width={44} tickFormatter={props.yFormat} domain={props.yDomain} />
-        {tooltip}
-        {props.series.map((s) => (
-          <Line key={s.key} type="monotone" dataKey={s.key} stroke={s.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} connectNulls />
-        ))}
-      </LineChart>
-    </Frame>
-  );
-}
-
-/** Horizontal labelled bars; used for "time by assignment" where labels are long. */
-export function HorizontalBars(props: { items: { label: string; value: number; color: string }[]; format: (v: number) => string }) {
-  const max = Math.max(1, ...props.items.map((i) => i.value));
+}) {
+  const c = useThemeColors();
+  const axis = { stroke: c.rule, tick: { fill: c.ink3, fontSize: 12 }, tickLine: false } as const;
+  const barSize = props.data.length > 40 ? 6 : props.data.length > 16 ? 12 : 22;
   return (
     <div style={{ display: 'grid', gap: 10 }}>
-      {props.items.map((item) => (
-        <div key={item.label} style={{ display: 'grid', gap: 4 }} title={`${item.label}: ${props.format(item.value)}`}>
-          <div className="spread small">
-            <span className="truncate">{item.label}</span>
-            <span className="num secondary">{props.format(item.value)}</span>
-          </div>
-          <div className="progress">
-            <div style={{ width: `${(item.value / max) * 100}%`, background: item.color }} />
-          </div>
-        </div>
-      ))}
+      {props.series.length > 1 && <Legend series={props.series} />}
+      <div style={{ width: '100%', height: props.height ?? 200 }}>
+        <ResponsiveContainer>
+          <BarChart data={props.data} barGap={props.overlay ? -barSize : 2} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+            <CartesianGrid stroke={c.rule} vertical={false} />
+            <XAxis dataKey={props.xKey} {...axis} tickFormatter={props.xFormat} minTickGap={16} />
+            <YAxis {...axis} axisLine={false} width={40} tickFormatter={props.yFormat} />
+            <Tooltip
+              cursor={{ fill: c.tint }}
+              content={(p) => <ChartTooltip {...(p as TooltipContentProps<number, string>)} series={props.series} labelFormat={props.xFormat} />}
+            />
+            {props.series.map((s) => (
+              <Bar key={s.key} dataKey={s.key} fill={s.color} radius={[3, 3, 0, 0]} barSize={barSize} isAnimationActive={false} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

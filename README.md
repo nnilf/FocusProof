@@ -21,16 +21,16 @@ npm run shortcut
 
 ## Using it
 
-1. **Assignments**: add what you're working on, with the files to watch (e.g. your essay `.docx`).
-2. **Session**: pick the assignment and press **Start session**. Work as normal.
+1. On **Today**, choose **New assignment** and add what you're working on, with the files to watch (e.g. your essay `.docx`).
+2. Pick it in the start bar and press **Start**. The window switches to a simple timer. Work as normal.
 3. Press **End session** to see your report: ALT, a timeline of your session, and words written.
-4. **History** and **Analytics** show your progress over time.
+4. **Today** shows the day as a strip, with each session at the time it happened. **Progress** shows your study time over the last 7, 30 or 90 days, and every session.
 
 Click any block on a report's timeline to see why it was classified that way.
 
 During a session, a small dot in the corner of your screen shows your current state: **green** for productive, **blue** for neutral, a **red ring** for distracted, and **grey** for away. Change the corner, display, size and any extra details in **Settings → Focus indicator**.
 
-**Two monitors with the webcam on?** Go to **Settings → Webcam calibration** and look at each screen when asked. Looking at either screen then counts as focused.
+**Two monitors with the webcam on?** Go to **Settings** (the gear, top right) **→ Webcam** and look at each screen when asked. Looking at either screen then counts as focused.
 
 **Write on a paper notepad?** Add it under **Work areas** so looking at it counts as focused.
 
@@ -58,7 +58,7 @@ ALT is an estimate based on your activity. It can't measure how much you learned
 - **Files:** only word and line counts are saved, never the contents.
 - **Websites:** only the domain (e.g. `netflix.com`) is read from the browser's address bar, never the full address.
 
-Each source can be switched off on the **Privacy** page.
+Each source can be switched off under **Settings → Monitoring**, where you can also see exactly what it collects.
 
 ## Troubleshooting
 

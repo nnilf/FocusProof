@@ -14,6 +14,9 @@ export function formatDuration(ms: number | null | undefined, opts: { seconds?: 
 
 const pad = (n: number): string => String(n).padStart(2, '0');
 
+/** Chart axis ticks in hours: "0", "1.5h", "3h". */
+export const hoursTick = (v: number): string => (v === 0 ? '0' : `${Number.isInteger(v) ? v : v.toFixed(1)}h`);
+
 export const formatHours = (ms: number): string => `${(ms / 3_600_000).toFixed(1)}h`;
 
 export function formatPct(v: number | null | undefined, digits = 0): string {
@@ -37,6 +40,9 @@ export const formatDate = (ts: number): string =>
 export const formatDateLong = (ts: number): string =>
   new Date(ts).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
+export const formatDay = (ts: number): string =>
+  new Date(ts).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+
 /** "2026-10-02" -> "2 Oct" */
 export function formatDayKey(key: string): string {
   const d = new Date(`${key}T12:00:00`);
@@ -56,15 +62,5 @@ export const CLASS_COLOR_VAR: Record<Classification, string> = {
   distracted: 'var(--c-distracted)',
   away: 'var(--c-away)',
 };
-
-/** Literal values for libraries (Recharts) that cannot resolve CSS variables in SVG attributes. */
-export const CLASS_HEX: Record<Classification, string> = {
-  productive: '#199e70',
-  neutral: '#3987e5',
-  distracted: '#e34948',
-  away: '#5d5c58',
-};
-
-export const SERIES_HEX = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'];
 
 export const basename = (p: string): string => p.split(/[\\/]/).filter(Boolean).pop() ?? p;

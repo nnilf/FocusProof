@@ -1,40 +1,50 @@
 import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { HashRouter, Route, Routes, useNavigate } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import './styles/global.css';
-import { Sidebar } from './components/Sidebar';
+import { TopBar } from './components/TopBar';
 import { RecoveryDialog } from './components/RecoveryDialog';
 import { useLiveStore } from './stores/liveStore';
 import { onEvent } from './lib/api';
-import { DashboardPage } from './pages/DashboardPage';
-import { AssignmentsPage } from './pages/AssignmentsPage';
-import { SessionPage } from './pages/SessionPage';
+import { TodayPage } from './pages/TodayPage';
+import { ProgressPage } from './pages/ProgressPage';
+import { AssignmentPage } from './pages/AssignmentPage';
 import { ReportPage } from './pages/ReportPage';
-import { HistoryPage } from './pages/HistoryPage';
-import { AnalyticsPage } from './pages/AnalyticsPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { PrivacyPage } from './pages/PrivacyPage';
+import { LiveSession } from './pages/LiveSession';
 
 function App() {
   const init = useLiveStore((s) => s.init);
+  const live = useLiveStore((s) => s.status !== null);
   const navigate = useNavigate();
   useEffect(() => init(), [init]);
   useEffect(() => onEvent('session:ended', ({ sessionId }) => navigate(`/report/${sessionId}`)), [navigate]);
 
+  // A running session takes over the window: nothing else to click into.
+  if (live) {
+    return (
+      <div className="app" style={{ gridTemplateRows: '1fr' }}>
+        <main className="main">
+          <LiveSession />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
-      <Sidebar />
+      <TopBar />
       <main className="main">
         <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/assignments" element={<AssignmentsPage />} />
-          <Route path="/assignments/:id" element={<AssignmentsPage />} />
-          <Route path="/session" element={<SessionPage />} />
+          <Route path="/" element={<TodayPage />} />
+          <Route path="/progress" element={<ProgressPage />} />
+          <Route path="/assignments/:id" element={<AssignmentPage />} />
           <Route path="/report/:id" element={<ReportPage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/history" element={<Navigate to="/progress" replace />} />
+          <Route path="/analytics" element={<Navigate to="/progress" replace />} />
+          <Route path="/privacy" element={<Navigate to="/settings" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       <RecoveryDialog />

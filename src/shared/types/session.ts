@@ -113,6 +113,13 @@ export interface TimelineBlock {
   intervalIds: number[];
 }
 
+/** One session's timeline, for drawing a whole day. */
+export interface DaySession {
+  sessionId: number;
+  assignmentName: string | null;
+  blocks: TimelineBlock[];
+}
+
 export interface FileProgress {
   path: string;
   kind: DocumentKind;
