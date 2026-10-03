@@ -1,5 +1,5 @@
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
-import { headPose } from '@shared/focus/gaze';
+import { eyeDirection, headPose } from '@shared/focus/gaze';
 import type { CameraBridge, CameraConfig } from '@shared/ipc/camera';
 
 declare global {
@@ -25,6 +25,7 @@ async function start(config: CameraConfig): Promise<void> {
       runningMode: 'VIDEO',
       numFaces: 1,
       outputFacialTransformationMatrixes: true,
+      outputFaceBlendshapes: true,
     });
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { width: 640, height: 480, frameRate: 15 },
@@ -41,11 +42,14 @@ async function start(config: CameraConfig): Promise<void> {
       const matrix = result.facialTransformationMatrixes?.[0]?.data;
       const facePresent = (result.faceLandmarks?.length ?? 0) > 0;
       const pose = facePresent && matrix ? headPose(matrix) : null;
+      const eye = pose ? eyeDirection(result.faceBlendshapes?.[0]?.categories) : null;
       bridge.sendSample({
         ts: Date.now(),
         facePresent,
         yawDeg: pose?.yawDeg ?? null,
         pitchDeg: pose?.pitchDeg ?? null,
+        eyeX: eye?.eyeX ?? null,
+        eyeY: eye?.eyeY ?? null,
       });
     }, periodMs);
   } catch (err) {

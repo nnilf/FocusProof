@@ -29,6 +29,7 @@ import { DemoDataService } from './services/DemoDataService';
 import { ReportService } from './services/ReportService';
 import { SessionManager } from './services/SessionManager';
 import { AppTray } from './tray';
+import { TargetWindow } from './calibration/TargetWindow';
 import { OverlayWindow } from './overlay/OverlayWindow';
 import { CameraWindow, createMainWindow } from './windows';
 
@@ -117,12 +118,18 @@ async function bootstrap(): Promise<void> {
     isSessionRunning: () => sessionManager.activeSessionId !== null,
   });
 
+  const target = new TargetWindow();
   const calibration = new CalibrationService({
     focus,
     startCamera: (samplesPerSecond) => cameraWindow.start({ samplesPerSecond }),
     stopCamera: () => cameraWindow.stop(),
+    showTarget: (displayId, point) => target.show(displayId, point),
+    hideTarget: () => target.hide(),
     isSessionRunning: () => sessionManager.activeSessionId !== null,
   });
+
+  // Fresh installs get the setup wizard once; existing users find it in Settings.
+  const firstRun = settings.getValue('settings') === undefined && !sessions.hasOwnSessions();
 
   if (settings.getValue('demoSeeded') !== true && assignments.list(true).length === 0) {
     try {
@@ -227,12 +234,15 @@ async function bootstrap(): Promise<void> {
         if (check.open) throw new Error('Close the calibration check before calibrating.');
         return calibration.start();
       },
-      'calibration:capture': (req) => calibration.capture(req.kind, req.displayId, req.label),
+      'calibration:point': (req) => calibration.capturePoint(req.displayId, req.x, req.y),
       'calibration:stop': () => calibration.stop(),
       'calibration:check': () => {
         if (calibration.active) throw new Error('Finish webcam calibration first.');
         check.show();
       },
+      'setup:status': () => ({ show: firstRun && settings.getValue('setupCompleted') !== true }),
+      'setup:complete': () => settings.setValue('setupCompleted', true),
+      'apps:recent': () => sessions.recentApps(40),
       'privacy:deleteAll': () => {
         if (sessionManager.activeSessionId) throw new Error('End the running session first');
         db?.exec('DELETE FROM sessions; DELETE FROM assignments;');

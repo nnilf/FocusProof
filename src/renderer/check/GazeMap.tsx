@@ -1,16 +1,32 @@
-import { FULL_ATTENTION_SHARE, PITCH_WEIGHT, isScreen, withDefaultScreen, type ZoneLike } from '@shared/focus/gaze';
+import {
+  FULL_ATTENTION_SHARE,
+  PITCH_WEIGHT,
+  gazeOf,
+  isScreen,
+  withDefaultScreen,
+  zoneBox,
+  zoneHasEye,
+  zonePoints,
+  type ZoneLike,
+} from '@shared/focus/gaze';
+import type { EyeGain } from '@shared/types';
 
 export interface Pose {
   yawDeg: number;
   pitchDeg: number;
+  eyeX: number | null;
+  eyeY: number | null;
 }
 
 /**
- * Head pose plotted against the calibrated zones, as seen from the user (mirrored like the video):
- * each zone's outer box is the look-away tolerance, the inner box is where attention is full.
+ * Gaze (head pose plus eye direction, when calibrated) plotted against the calibrated zones, as
+ * seen from the user (mirrored like the video): each zone's outer box is the look-away tolerance
+ * around the area its calibration points span, the inner box is where attention is full.
  */
 export function GazeMap(props: {
   zones: readonly ZoneLike[];
+  /** Null draws head pose only. */
+  eyeGain: EyeGain | null;
   lookAwayDeg: number;
   pose: Pose | null;
   trail: Pose[];
@@ -23,16 +39,23 @@ export function GazeMap(props: {
   const Lp = L / PITCH_WEIGHT;
   // Mirror yaw so turning right moves right, as in the video.
   const px = (yaw: number): number => -yaw;
+  const gainOf = (z: ZoneLike): EyeGain | null => (props.eyeGain && zoneHasEye(z) ? props.eyeGain : null);
+  const boxes = zones.map((z) => zoneBox(z, gainOf(z)));
+  const eyeUsed = zones.some((z) => gainOf(z) !== null);
+  const at = (p: Pose): { x: number; y: number } => {
+    const g = gazeOf(p, eyeUsed ? props.eyeGain : null);
+    return { x: px(g.x), y: g.y };
+  };
 
   let minX = -45;
   let maxX = 45;
   let minY = -30;
   let maxY = 30;
-  for (const z of zones) {
-    minX = Math.min(minX, px(z.yawDeg) - L - 6);
-    maxX = Math.max(maxX, px(z.yawDeg) + L + 6);
-    minY = Math.min(minY, z.pitchDeg - Lp - 8);
-    maxY = Math.max(maxY, z.pitchDeg + Lp + 4);
+  for (const b of boxes) {
+    minX = Math.min(minX, px(b.maxX) - L - 6);
+    maxX = Math.max(maxX, px(b.minX) + L + 6);
+    minY = Math.min(minY, b.minY - Lp - 8);
+    maxY = Math.max(maxY, b.maxY + Lp + 4);
   }
   const clampX = (x: number): number => Math.min(maxX - 2, Math.max(minX + 2, x));
   const clampY = (y: number): number => Math.min(maxY - 2, Math.max(minY + 2, y));
@@ -66,18 +89,25 @@ export function GazeMap(props: {
       </g>
 
       {zones.map((z, i) => {
-        const cx = px(z.yawDeg);
-        const cy = z.pitchDeg;
+        const b = boxes[i] ?? zoneBox(z, null);
+        // Mirrored: the box's left edge is its largest yaw.
+        const left = px(b.maxX);
+        const w = b.maxX - b.minX;
+        const h = b.maxY - b.minY;
         const color = props.zoneColor(z);
         const active = props.activeZone === z;
         const f = FULL_ATTENTION_SHARE;
+        const points = z.points?.length ? zonePoints(z).map((p) => gazeOf(p, gainOf(z))) : [];
         return (
           <g key={`${z.label}-${i}`} className={`zone ${active ? 'active' : ''}`}>
-            <rect x={cx - L} y={cy - Lp} width={2 * L} height={2 * Lp} rx={2} fill={color} stroke={color} className="zone-outer" vectorEffect="non-scaling-stroke" />
+            <rect x={left - L} y={b.minY - Lp} width={w + 2 * L} height={h + 2 * Lp} rx={2} fill={color} stroke={color} className="zone-outer" vectorEffect="non-scaling-stroke" />
             {isScreen(z) && (
-              <rect x={cx - L * f} y={cy - Lp * f} width={2 * L * f} height={2 * Lp * f} rx={1.2} fill={color} className="zone-inner" />
+              <rect x={left - L * f} y={b.minY - Lp * f} width={w + 2 * L * f} height={h + 2 * Lp * f} rx={1.2} fill={color} className="zone-inner" />
             )}
-            <text x={cx} y={cy - Lp - font * 0.5} fontSize={font} textAnchor="middle" className="zone-label">
+            {points.map((p, j) => (
+              <circle key={j} cx={px(p.x)} cy={p.y} r={font * 0.25} fill={color} />
+            ))}
+            <text x={left + w / 2} y={b.minY - Lp - font * 0.5} fontSize={font} textAnchor="middle" className="zone-label">
               {z.label ?? 'Screen'}
             </text>
           </g>
@@ -87,12 +117,12 @@ export function GazeMap(props: {
       {props.trail.length > 1 && (
         <polyline
           className="trail"
-          points={props.trail.map((p) => `${clampX(px(p.yawDeg))},${clampY(p.pitchDeg)}`).join(' ')}
+          points={props.trail.map((p) => `${clampX(at(p).x)},${clampY(at(p).y)}`).join(' ')}
           vectorEffect="non-scaling-stroke"
         />
       )}
       {props.pose && (
-        <g className="pose" transform={`translate(${clampX(px(props.pose.yawDeg))} ${clampY(props.pose.pitchDeg)})`}>
+        <g className="pose" transform={`translate(${clampX(at(props.pose).x)} ${clampY(at(props.pose).y)})`}>
           <circle r={font * 1.4} fill={props.color} className="pose-halo" />
           <circle r={font * 0.62} fill={props.color} className="pose-dot" vectorEffect="non-scaling-stroke" />
         </g>

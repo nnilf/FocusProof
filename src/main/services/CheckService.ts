@@ -115,6 +115,7 @@ export class CheckService {
     const s = this.deps.settings.get();
     return {
       zones: s.camera.zones,
+      eyeGain: s.camera.eyeGain,
       lookAwayDeg: s.camera.lookAwayAngleDeg,
       samplesPerSecond: s.camera.samplesPerSecond,
       offScreenPolicy: s.engine.offScreenPolicy,
@@ -170,7 +171,7 @@ export class CheckService {
     this.preview = preview;
     const { focus, monitor } = this.deps;
     focus.reset();
-    focus.configure(settings.camera.lookAwayAngleDeg, settings.camera.samplesPerSecond, settings.camera.zones);
+    focus.configure(settings.camera.lookAwayAngleDeg, settings.camera.samplesPerSecond, settings.camera.zones, settings.camera.eyeGain);
     focus.setStatus('active', null);
     preview.busy = monitor
       .start({
@@ -208,7 +209,7 @@ export class CheckService {
   private async tick(p: Preview): Promise<void> {
     const settings = this.deps.settings.get();
     const now = Date.now();
-    this.deps.focus.configure(settings.camera.lookAwayAngleDeg, settings.camera.samplesPerSecond, settings.camera.zones);
+    this.deps.focus.configure(settings.camera.lookAwayAngleDeg, settings.camera.samplesPerSecond, settings.camera.zones, settings.camera.eyeGain);
     const frame = await this.deps.monitor.collect(p.lastTickTs, now);
     if (this.preview !== p || p.stopping) return;
     p.lastTickTs = now;

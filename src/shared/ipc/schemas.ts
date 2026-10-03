@@ -3,6 +3,15 @@ import { z } from 'zod';
 const probability = z.number().min(0).max(1);
 const nullableInt = z.number().int().min(0).nullable();
 
+const eyeValue = z.number().min(-2).max(2).nullable();
+
+export const gazePointSchema = z.object({
+  yawDeg: z.number().min(-90).max(90),
+  pitchDeg: z.number().min(-90).max(90),
+  eyeX: eyeValue,
+  eyeY: eyeValue,
+});
+
 export const focusZoneSchema = z.object({
   // Calibrations saved before distraction areas existed were all screens.
   kind: z.enum(['screen', 'distraction']).default('screen'),
@@ -10,12 +19,14 @@ export const focusZoneSchema = z.object({
   label: z.string().max(200),
   yawDeg: z.number().min(-90).max(90),
   pitchDeg: z.number().min(-90).max(90),
+  points: z.array(gazePointSchema).max(16).optional(),
 });
 
-export const calibrationCaptureSchema = z.object({
-  kind: z.enum(['screen', 'distraction']),
+export const calibrationPointSchema = z.object({
+  /** The display to show the target on, at x/y (0–1 across it); null for an area off the screens. */
   displayId: z.number().int().nullable(),
-  label: z.string().trim().min(1).max(200),
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
 });
 
 export const monitoringTogglesSchema = z.object({
@@ -110,6 +121,7 @@ export const settingsPatchSchema = z.object({
       samplesPerSecond: z.number().min(0.2).max(10),
       lookAwayAngleDeg: z.number().min(5).max(80),
       zones: z.array(focusZoneSchema).max(8),
+      eyeGain: z.object({ x: z.number().min(-3).max(3), y: z.number().min(-3).max(3) }),
     })
     .partial()
     .optional(),
@@ -137,6 +149,8 @@ export const cameraSampleSchema = z.object({
   facePresent: z.boolean(),
   yawDeg: z.number().nullable(),
   pitchDeg: z.number().nullable(),
+  eyeX: eyeValue.optional(),
+  eyeY: eyeValue.optional(),
 });
 
 export const cameraStatusSchema = z.object({

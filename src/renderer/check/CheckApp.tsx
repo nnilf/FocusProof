@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { attentionFromPose, classifyGaze, type ZoneLike } from '@shared/focus/gaze';
+import { attentionFromPose, classifyGaze, type EyeContext, type ZoneLike } from '@shared/focus/gaze';
 import type { CheckBridge, CheckConfig, CheckUpdate } from '@shared/ipc/check';
 import { useThemeColors } from '../app/lib/theme';
 import { formatPct } from '../app/lib/format';
@@ -30,6 +30,7 @@ const subscribe = (l: () => void): (() => void) => {
 
 const FALLBACK: CheckConfig = {
   zones: [],
+  eyeGain: { x: 0, y: 0 },
   lookAwayDeg: 30,
   samplesPerSecond: 2,
   offScreenPolicy: 'neutral',
@@ -71,12 +72,16 @@ export function CheckApp() {
     let lastView = 0;
     startTracker(bridge, video, () => configRef.current.samplesPerSecond, (track) => {
       if (track.yawDeg !== null && track.pitchDeg !== null) {
+        const ease = (from: number | null, to: number | null): number | null =>
+          to === null ? null : from === null ? to : from + SMOOTHING * (to - from);
         smooth = smooth
           ? {
               yawDeg: smooth.yawDeg + SMOOTHING * (track.yawDeg - smooth.yawDeg),
               pitchDeg: smooth.pitchDeg + SMOOTHING * (track.pitchDeg - smooth.pitchDeg),
+              eyeX: ease(smooth.eyeX, track.eyeX),
+              eyeY: ease(smooth.eyeY, track.eyeY),
             }
-          : { yawDeg: track.yawDeg, pitchDeg: track.pitchDeg };
+          : { yawDeg: track.yawDeg, pitchDeg: track.pitchDeg, eyeX: track.eyeX, eyeY: track.eyeY };
       } else smooth = null;
       drawRef.current?.({ ...track, yawDeg: smooth?.yawDeg ?? null, pitchDeg: smooth?.pitchDeg ?? null });
       if (track.ts - lastView < VIEW_MS) return;
@@ -100,8 +105,9 @@ export function CheckApp() {
 
   const offScreenColor = { ignore: colors.away, neutral: colors.neutral, distracted: colors.distracted }[config.offScreenPolicy];
   const zoneColor = (z: ZoneLike): string => ((z.kind ?? 'screen') === 'screen' ? colors.productive : colors.distracted);
-  const gaze = view.pose ? classifyGaze(view.pose.yawDeg, view.pose.pitchDeg, config.zones, config.lookAwayDeg) : null;
-  const attention = view.pose ? attentionFromPose(view.pose.yawDeg, view.pose.pitchDeg, config.lookAwayDeg, config.zones) : null;
+  const eye: EyeContext | undefined = view.pose ? { eyeX: view.pose.eyeX, eyeY: view.pose.eyeY, gain: config.eyeGain } : undefined;
+  const gaze = view.pose ? classifyGaze(view.pose.yawDeg, view.pose.pitchDeg, config.zones, config.lookAwayDeg, eye) : null;
+  const attention = view.pose ? attentionFromPose(view.pose.yawDeg, view.pose.pitchDeg, config.lookAwayDeg, config.zones, eye) : null;
   const color = !gaze ? colors.away : gaze.zone ? zoneColor(gaze.zone) : offScreenColor;
   const target = !view.face
     ? 'No face detected'
@@ -140,6 +146,7 @@ export function CheckApp() {
           </CameraStage>
           <GazeMap
             zones={config.zones}
+            eyeGain={config.eyeGain.x === 0 && config.eyeGain.y === 0 ? null : config.eyeGain}
             lookAwayDeg={config.lookAwayDeg}
             pose={view.pose}
             trail={view.trail}

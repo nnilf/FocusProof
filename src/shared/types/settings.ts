@@ -45,6 +45,14 @@ export type FocusZoneKind = 'screen' | 'distraction';
  * - kind 'screen' without a displayId: a work area such as a paper notepad
  * - kind 'distraction': e.g. a separate laptop, TV or phone stand
  */
+/** Head pose and eye direction recorded while looking at one point (eye values null when unknown). */
+export interface GazePoint {
+  yawDeg: number;
+  pitchDeg: number;
+  eyeX: number | null;
+  eyeY: number | null;
+}
+
 export interface FocusZone {
   kind: FocusZoneKind;
   /** The display this screen zone belongs to; null for areas that are not displays of this PC. */
@@ -52,6 +60,14 @@ export interface FocusZone {
   label: string;
   yawDeg: number;
   pitchDeg: number;
+  /** Points across the zone (corners and edges of a screen); absent for single-point calibrations. */
+  points?: GazePoint[];
+}
+
+/** How many degrees of gaze eye direction adds, per axis; 0 means head pose only. */
+export interface EyeGain {
+  x: number;
+  y: number;
 }
 
 export interface CameraSettings {
@@ -59,6 +75,8 @@ export interface CameraSettings {
   lookAwayAngleDeg: number;
   /** Empty = not calibrated; the camera's straight-ahead direction is used. */
   zones: FocusZone[];
+  /** Fitted during calibration. */
+  eyeGain: EyeGain;
 }
 
 export type OverlayCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';

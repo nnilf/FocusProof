@@ -1,14 +1,19 @@
-import { attentionFromPose, classifyGaze } from '@shared/focus/gaze';
-import type { CameraObservation, CameraState, FocusZone } from '@shared/types';
+import { attentionFromPose, classifyGaze, NO_EYE_GAIN, type EyeContext } from '@shared/focus/gaze';
+import type { CameraObservation, CameraState, EyeGain, FocusZone } from '@shared/types';
 
 export interface CameraSample {
   ts: number;
   facePresent: boolean;
   yawDeg: number | null;
   pitchDeg: number | null;
+  /** Eye direction within the head; absent from older camera windows. */
+  eyeX?: number | null;
+  eyeY?: number | null;
 }
 
 export { angleToNearestZone, attentionFromPose, classifyGaze, type GazeTarget, type ZoneLike } from '@shared/focus/gaze';
+
+const eyeOf = (s: CameraSample, gain: EyeGain): EyeContext => ({ eyeX: s.eyeX ?? null, eyeY: s.eyeY ?? null, gain });
 
 /** Aggregates derived webcam samples (never images) into per-interval presence and focus. */
 export class FocusAnalyzer {
@@ -17,6 +22,7 @@ export class FocusAnalyzer {
   message: string | null = null;
   private lastFocus: number | null = null;
   private zones: FocusZone[] = [];
+  private eyeGain: EyeGain = NO_EYE_GAIN;
   /** Extra raw-sample consumer (used by calibration). */
   rawListener: ((sample: CameraSample) => void) | null = null;
 
@@ -25,10 +31,11 @@ export class FocusAnalyzer {
     private samplesPerSecond: number,
   ) {}
 
-  configure(lookAwayDeg: number, samplesPerSecond: number, zones: FocusZone[]): void {
+  configure(lookAwayDeg: number, samplesPerSecond: number, zones: FocusZone[], eyeGain: EyeGain = NO_EYE_GAIN): void {
     this.lookAwayDeg = lookAwayDeg;
     this.samplesPerSecond = samplesPerSecond;
     this.zones = zones;
+    this.eyeGain = eyeGain;
   }
 
   setStatus(state: CameraState, message: string | null): void {
@@ -53,7 +60,9 @@ export class FocusAnalyzer {
       return null;
     }
     const present = this.samples.filter((s) => s.facePresent);
-    const attention = present.map((s) => attentionFromPose(s.yawDeg, s.pitchDeg, this.lookAwayDeg, this.zones));
+    const attention = present.map((s) =>
+      attentionFromPose(s.yawDeg, s.pitchDeg, this.lookAwayDeg, this.zones, eyeOf(s, this.eyeGain)),
+    );
     const msPerSample = 1000 / this.samplesPerSecond;
     const lookingAway =
       this.samples.length - present.length + attention.filter((a) => a < 0.3).length;
@@ -64,7 +73,7 @@ export class FocusAnalyzer {
     const workCounts = new Map<string, number>();
     for (const s of present) {
       if (s.yawDeg === null || s.pitchDeg === null) continue;
-      const gaze = classifyGaze(s.yawDeg, s.pitchDeg, this.zones, this.lookAwayDeg);
+      const gaze = classifyGaze(s.yawDeg, s.pitchDeg, this.zones, this.lookAwayDeg, eyeOf(s, this.eyeGain));
       if (gaze.target === 'offscreen') offscreen++;
       if (gaze.target === 'screen' && gaze.zone?.displayId === null && gaze.zone.label) {
         workCounts.set(gaze.zone.label, (workCounts.get(gaze.zone.label) ?? 0) + 1);

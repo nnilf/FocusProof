@@ -12,7 +12,14 @@ export interface CameraConfig {
 
 export interface CameraBridge {
   getModel(): Promise<Uint8Array | null>;
-  sendSample(sample: { ts: number; facePresent: boolean; yawDeg: number | null; pitchDeg: number | null }): void;
+  sendSample(sample: {
+    ts: number;
+    facePresent: boolean;
+    yawDeg: number | null;
+    pitchDeg: number | null;
+    eyeX: number | null;
+    eyeY: number | null;
+  }): void;
   sendStatus(status: { state: 'starting' | 'active' | 'unavailable'; message: string | null }): void;
   onConfig(listener: (config: CameraConfig) => void): void;
 }

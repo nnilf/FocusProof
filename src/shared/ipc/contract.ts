@@ -1,12 +1,12 @@
 import type {
   AnalyticsData,
   AnalyticsQuery,
-  FocusZone,
   Assignment,
   AssignmentInput,
   AssignmentStats,
   DashboardData,
   DaySession,
+  GazePoint,
   LiveStatus,
   SessionReport,
   SessionSummaryRow,
@@ -71,12 +71,15 @@ export interface IpcContract {
   'privacy:deleteAll': { req: Record<string, never>; res: void };
   'displays:list': { req: Record<string, never>; res: DisplayInfo[] };
   'calibration:start': { req: Record<string, never>; res: void };
-  'calibration:capture': {
-    req: { kind: FocusZone['kind']; displayId: number | null; label: string };
-    res: FocusZone & { samples: number };
+  'calibration:point': {
+    req: { displayId: number | null; x: number; y: number };
+    res: GazePoint & { samples: number };
   };
   'calibration:stop': { req: Record<string, never>; res: void };
   'calibration:check': { req: Record<string, never>; res: void };
+  'setup:status': { req: Record<string, never>; res: { show: boolean } };
+  'setup:complete': { req: Record<string, never>; res: void };
+  'apps:recent': { req: Record<string, never>; res: string[] };
 }
 
 export type IpcChannel = keyof IpcContract;

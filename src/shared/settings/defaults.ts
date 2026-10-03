@@ -135,7 +135,7 @@ export const DEFAULT_SETTINGS: Settings = {
     ],
   },
   privacy: { storeWindowTitles: true, readBrowserDomains: true },
-  camera: { samplesPerSecond: 2, lookAwayAngleDeg: 25, zones: [] },
+  camera: { samplesPerSecond: 2, lookAwayAngleDeg: 25, zones: [], eyeGain: { x: 0, y: 0 } },
   overlay: {
     enabled: true,
     corner: 'top-right',

@@ -8,4 +8,4 @@ export function resourcePath(...parts: string[]): string {
 }
 
 export const rendererDir = (): string => join(__dirname, '../renderer');
-export const preloadPath = (name: 'index' | 'camera' | 'overlay' | 'check'): string => join(__dirname, `../preload/${name}.js`);
+export const preloadPath = (name: 'index' | 'camera' | 'overlay' | 'check' | 'target'): string => join(__dirname, `../preload/${name}.js`);

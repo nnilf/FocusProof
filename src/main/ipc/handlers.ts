@@ -5,7 +5,7 @@ import {
   analyticsQuerySchema,
   archiveSchema,
   assignmentInputSchema,
-  calibrationCaptureSchema,
+  calibrationPointSchema,
   emptySchema,
   idSchema,
   listAssignmentsSchema,
@@ -53,9 +53,12 @@ const SCHEMAS: { [C in IpcChannel]: z.ZodType } = {
   'privacy:deleteAll': emptySchema,
   'displays:list': emptySchema,
   'calibration:start': emptySchema,
-  'calibration:capture': calibrationCaptureSchema,
+  'calibration:point': calibrationPointSchema,
   'calibration:stop': emptySchema,
   'calibration:check': emptySchema,
+  'setup:status': emptySchema,
+  'setup:complete': emptySchema,
+  'apps:recent': emptySchema,
 };
 
 export function registerHandlers(handlers: HandlerMap, isTrustedSender: (event: IpcMainInvokeEvent) => boolean): void {

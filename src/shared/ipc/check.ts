@@ -1,5 +1,5 @@
 // Kept separate from contract.ts so each sandboxed preload bundles without shared chunks.
-import type { EngineSettings, FocusZone } from '../types/settings';
+import type { EngineSettings, EyeGain, FocusZone } from '../types/settings';
 import type { IntervalEvaluation, SignalFrame } from '../types/signals';
 
 export const CHECK_CHANNELS = {
@@ -12,6 +12,7 @@ export const CHECK_CHANNELS = {
 /** The settings the calibration check draws against. */
 export interface CheckConfig {
   zones: FocusZone[];
+  eyeGain: EyeGain;
   lookAwayDeg: number;
   samplesPerSecond: number;
   offScreenPolicy: EngineSettings['offScreenPolicy'];
@@ -37,7 +38,14 @@ export interface CheckUpdate {
 export interface CheckBridge {
   getModel(): Promise<Uint8Array | null>;
   /** Derived numbers only; frames never leave the check window. */
-  sendSample(sample: { ts: number; facePresent: boolean; yawDeg: number | null; pitchDeg: number | null }): void;
+  sendSample(sample: {
+    ts: number;
+    facePresent: boolean;
+    yawDeg: number | null;
+    pitchDeg: number | null;
+    eyeX: number | null;
+    eyeY: number | null;
+  }): void;
   sendStatus(status: { state: 'starting' | 'active' | 'unavailable'; message: string | null }): void;
   onUpdate(listener: (update: CheckUpdate) => void): void;
 }

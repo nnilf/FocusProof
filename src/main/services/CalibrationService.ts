@@ -1,8 +1,13 @@
-import type { CameraState, FocusZone, FocusZoneKind } from '@shared/types';
+import type { CameraState, GazePoint } from '@shared/types';
 import type { CameraSample, FocusAnalyzer } from '../monitoring/focus/FocusAnalyzer';
 
-const CALIBRATION_SAMPLES_PER_SECOND = 5;
-const CAPTURE_MS = 3_000;
+const CALIBRATION_SAMPLES_PER_SECOND = 10;
+/** Time for the eyes to reach a new on-screen dot before recording. */
+const SCREEN_SETTLE_MS = 700;
+const SCREEN_CAPTURE_MS = 1_500;
+/** Off-screen areas are looked at after clicking, so they get longer to settle. */
+const AREA_SETTLE_MS = 1_000;
+const AREA_CAPTURE_MS = 2_000;
 const START_TIMEOUT_MS = 20_000;
 const MIN_SAMPLES = 5;
 
@@ -10,6 +15,8 @@ export interface CalibrationDeps {
   focus: FocusAnalyzer;
   startCamera: (samplesPerSecond: number) => void;
   stopCamera: () => void;
+  showTarget: (displayId: number, point: { x: number; y: number; phase: 'settle' | 'capture' }) => Promise<void>;
+  hideTarget: () => void;
   isSessionRunning: () => boolean;
 }
 
@@ -19,9 +26,12 @@ function median(values: number[]): number {
   return s.length % 2 ? (s[mid] ?? 0) : ((s[mid - 1] ?? 0) + (s[mid] ?? 0)) / 2;
 }
 
+const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
- * Records the head pose while the user looks at each display, so attention can be measured
- * against every screen rather than only the camera's straight-ahead direction.
+ * Records head pose and eye direction while the user looks at points across each display (shown
+ * as a dot) and at areas off the screens, so attention can be measured against every screen
+ * rather than only the camera's straight-ahead direction.
  */
 export class CalibrationService {
   private running = false;
@@ -67,28 +77,41 @@ export class CalibrationService {
     }
   }
 
-  async capture(kind: FocusZoneKind, displayId: number | null, label: string): Promise<FocusZone & { samples: number }> {
+  /**
+   * Shows a dot at x/y (0–1) on the display and records where the user looks, or, without a
+   * display, records while they look at an area off the screens.
+   */
+  async capturePoint(displayId: number | null, x: number, y: number): Promise<GazePoint & { samples: number }> {
     if (!this.running) throw new Error('Calibration has not been started.');
+    if (displayId !== null) await this.deps.showTarget(displayId, { x, y, phase: 'settle' });
+    else this.deps.hideTarget();
+    await wait(displayId !== null ? SCREEN_SETTLE_MS : AREA_SETTLE_MS);
+    if (!this.running) throw new Error('Calibration was cancelled.');
+    if (displayId !== null) await this.deps.showTarget(displayId, { x, y, phase: 'capture' });
+
     const samples: CameraSample[] = [];
     this.deps.focus.rawListener = (s) => {
       if (s.facePresent && s.yawDeg !== null && s.pitchDeg !== null) samples.push(s);
     };
-    await new Promise((resolve) => setTimeout(resolve, CAPTURE_MS));
+    await wait(displayId !== null ? SCREEN_CAPTURE_MS : AREA_CAPTURE_MS);
     this.deps.focus.rawListener = null;
+    if (!this.running) throw new Error('Calibration was cancelled.');
     if (samples.length < MIN_SAMPLES) {
       throw new Error('Your face was not detected clearly. Check the lighting and that you are in view, then try again.');
     }
+    const withEye = samples.filter((s) => typeof s.eyeX === 'number' && typeof s.eyeY === 'number');
+    const eyeKnown = withEye.length >= samples.length / 2;
     return {
-      kind,
-      displayId,
-      label,
       yawDeg: median(samples.map((s) => s.yawDeg ?? 0)),
       pitchDeg: median(samples.map((s) => s.pitchDeg ?? 0)),
+      eyeX: eyeKnown ? median(withEye.map((s) => s.eyeX ?? 0)) : null,
+      eyeY: eyeKnown ? median(withEye.map((s) => s.eyeY ?? 0)) : null,
       samples: samples.length,
     };
   }
 
   stop(): void {
+    this.deps.hideTarget();
     if (!this.running) return;
     this.running = false;
     this.deps.focus.rawListener = null;

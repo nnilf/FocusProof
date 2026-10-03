@@ -231,7 +231,7 @@ export class SessionManager {
     });
 
     this.deps.focus.reset();
-    this.deps.focus.configure(settings.camera.lookAwayAngleDeg, settings.camera.samplesPerSecond, settings.camera.zones);
+    this.deps.focus.configure(settings.camera.lookAwayAngleDeg, settings.camera.samplesPerSecond, settings.camera.zones, settings.camera.eyeGain);
     if (session.config.monitoring.webcam) {
       this.deps.focus.setStatus('starting', null);
       this.deps.camera.start(settings.camera.samplesPerSecond);

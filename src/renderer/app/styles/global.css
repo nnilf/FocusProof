@@ -203,6 +203,10 @@ input[type='range'] { width: 100%; accent-color: var(--ink-2); }
 .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
 .chip button { background: none; border: 0; padding: 0; color: var(--ink-3); cursor: pointer; display: inline-flex; }
 .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.pick { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 11px; font: inherit; font-size: 13px; background: none; border: 1px solid var(--rule); color: var(--ink-3); cursor: pointer; }
+.pick:hover { color: var(--ink); }
+.pick.on { background: var(--tint); border-color: transparent; color: var(--ink); }
+.pick .dot { width: 8px; height: 8px; border-radius: 50%; }
 .camera-on { color: var(--warning); display: inline-flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 500; }
 
 /* Bars */

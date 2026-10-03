@@ -377,6 +377,23 @@ export class SessionRepository {
     return Boolean(a ?? b);
   }
 
+  hasOwnSessions(): boolean {
+    return Boolean(this.db.prepare('SELECT 1 FROM sessions WHERE is_demo = 0 LIMIT 1').get());
+  }
+
+  /** Apps seen in the user's own sessions, most used first. */
+  recentApps(limit: number): string[] {
+    const rows = this.db
+      .prepare(
+        `SELECT LOWER(i.process_name) AS name, SUM(i.end_ts - i.start_ts) AS ms
+         FROM activity_intervals i JOIN sessions s ON s.id = i.session_id
+         WHERE s.is_demo = 0 AND i.process_name IS NOT NULL AND i.process_name != ''
+         GROUP BY LOWER(i.process_name) ORDER BY ms DESC LIMIT ?`,
+      )
+      .all(limit) as { name: string }[];
+    return rows.map((r) => r.name);
+  }
+
   private map(r: SessionRow): Session {
     return {
       id: r.id,

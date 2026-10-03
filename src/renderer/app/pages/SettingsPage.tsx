@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import type { MonitoringToggles, OffScreenPolicy, Settings, SettingsPatch, WeightKey } from '@shared/types';
 import { WEIGHT_KEYS } from '@shared/types';
 import { normaliseDomain } from '@shared/domains';
@@ -112,7 +112,8 @@ export function SettingsPage() {
     pending.current = null;
     window.clearTimeout(timer.current);
     if (!next) return;
-    const { zones: _zones, ...camera } = next.camera;
+    // Calibration saves zones and eye gain itself; a stale draft must not overwrite them.
+    const { zones: _zones, eyeGain: _eyeGain, ...camera } = next.camera;
     const patch: SettingsPatch = { ...next, camera };
     call('settings:update', patch)
       .then(() => setSaved(true))
@@ -209,7 +210,7 @@ export function SettingsPage() {
 
       <section className="settings-section" id="webcam">
         <h2>Webcam</h2>
-        <CameraCalibration zones={remote.data?.camera.zones ?? []} onSaved={remote.reload} />
+        <CameraCalibration zones={remote.data?.camera.zones ?? []} lookAwayDeg={draft.camera.lookAwayAngleDeg} onSaved={remote.reload} />
         <Field label="Looking away from every screen counts as">
           <select className="select" style={{ maxWidth: 280 }} value={e.offScreenPolicy} onChange={(ev) => setEngine({ offScreenPolicy: ev.target.value as OffScreenPolicy })}>
             <option value="ignore">Nothing (ignored)</option>
@@ -220,7 +221,12 @@ export function SettingsPage() {
       </section>
 
       <section className="settings-section">
-        <h2>What counts as study</h2>
+        <div className="section-head">
+          <h2>What counts as study</h2>
+          <Link className="text-btn" to="/setup" state={{ back: '/settings' }} onClick={() => flushRef.current()}>
+            Run setup
+          </Link>
+        </div>
         <div className="grid cols-2" style={{ gap: 32, alignItems: 'start' }}>
           <div className="grid" style={{ gap: 18 }}>
             <h3>Study</h3>

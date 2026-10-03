@@ -5,6 +5,8 @@ import { settingsPatchSchema } from '@shared/ipc/schemas';
 import { WeightedSignalEngine } from '../../src/main/engine/WeightedSignalEngine';
 import { INITIAL_ENGINE_STATE } from '../../src/main/engine/LearningTimeEngine';
 import { FocusAnalyzer, attentionFromPose, classifyGaze, type ZoneLike } from '../../src/main/monitoring/focus/FocusAnalyzer';
+import { eyeDirection, fitEyeGain, NO_EYE_GAIN } from '@shared/focus/gaze';
+import type { GazePoint } from '@shared/types';
 import { buildInsights } from '../../src/main/services/InsightService';
 import { summarizeSession } from '../../src/main/engine/summary';
 
@@ -101,6 +103,66 @@ describe('stored calibrations', () => {
   it('treats zones saved before distraction areas existed as screens', () => {
     const parsed = settingsPatchSchema.parse({ camera: { zones: [{ displayId: 1, label: 'display 1', yawDeg: 0, pitchDeg: 0 }] } });
     expect(parsed.camera?.zones?.[0]?.kind).toBe('screen');
+  });
+});
+
+describe('multi-point calibration with eye direction', () => {
+  // A laptop with a monitor just above it: the head barely tilts between them, the eyes do the moving.
+  const SPOTS = [-1, -0.5, 0, 0.5, 1];
+  const grid = (pitch: number, eyeY: number): GazePoint[] =>
+    SPOTS.flatMap((s, i) => [
+      { yawDeg: s * 10, pitchDeg: pitch + (i % 2 ? 2 : -2), eyeX: s * 0.2, eyeY: eyeY - 0.15 },
+      { yawDeg: s * 10, pitchDeg: pitch + (i % 2 ? -2 : 2), eyeX: s * 0.2, eyeY: eyeY + 0.15 },
+    ]);
+  const zone = (label: string, displayId: number, points: GazePoint[]): ZoneLike => ({
+    kind: 'screen',
+    displayId,
+    label,
+    yawDeg: 0,
+    pitchDeg: points[0]?.pitchDeg ?? 0,
+    points,
+  });
+  const monitor = zone('monitor', 2, grid(2, -0.35));
+  const laptop = zone('laptop', 1, grid(5, 0.35));
+  const desk = [monitor, laptop];
+
+  it('fits a vertical eye gain when head pitch alone cannot separate the screens', () => {
+    const gain = fitEyeGain(desk);
+    expect(gain.y).toBeGreaterThan(0);
+    // Head 4° down, eyes looking up: the monitor, which head pose alone reads as the laptop.
+    expect(classifyGaze(0, 4, desk, 25).zone?.label).toBe('laptop');
+    expect(classifyGaze(0, 4, desk, 25, { eyeX: 0, eyeY: -0.35, gain }).zone?.label).toBe('monitor');
+    expect(classifyGaze(0, 3, desk, 25, { eyeX: 0, eyeY: 0.35, gain }).zone?.label).toBe('laptop');
+  });
+
+  it('keeps head pose only without eye data', () => {
+    const headOnly = desk.map((z) => ({ ...z, points: z.points?.map((p) => ({ ...p, eyeX: null, eyeY: null })) }));
+    expect(fitEyeGain(headOnly)).toEqual(NO_EYE_GAIN);
+    expect(fitEyeGain(zones)).toEqual(NO_EYE_GAIN);
+  });
+
+  it('counts anywhere within the calibrated corners as full attention', () => {
+    const wide = zone('wide', 3, [
+      { yawDeg: -20, pitchDeg: -5, eyeX: null, eyeY: null },
+      { yawDeg: 20, pitchDeg: 5, eyeX: null, eyeY: null },
+    ]);
+    expect(attentionFromPose(18, 4, 10, [wide])).toBe(1);
+    expect(attentionFromPose(35, 0, 10, [wide])).toBe(0);
+  });
+
+  it('reads eye direction from blendshapes, signed like head pose', () => {
+    const shapes = (o: Record<string, number>) =>
+      ['eyeLookOutLeft', 'eyeLookInLeft', 'eyeLookOutRight', 'eyeLookInRight', 'eyeLookUpLeft', 'eyeLookUpRight', 'eyeLookDownLeft', 'eyeLookDownRight'].map(
+        (categoryName) => ({ categoryName, score: o[categoryName] ?? 0 }),
+      );
+    expect(eyeDirection(shapes({ eyeLookDownLeft: 0.6, eyeLookDownRight: 0.6 }))?.eyeY).toBeCloseTo(0.6);
+    expect(eyeDirection(shapes({ eyeLookUpLeft: 0.4, eyeLookUpRight: 0.4 }))?.eyeY).toBeCloseTo(-0.4);
+    expect(eyeDirection([])).toBeNull();
+  });
+
+  it('accepts samples and stored zones with and without eye data', () => {
+    const parsed = settingsPatchSchema.parse({ camera: { zones: [{ kind: 'screen', displayId: 1, label: 'laptop', yawDeg: 0, pitchDeg: 5, points: laptop.points }], eyeGain: { x: 0, y: 1 } } });
+    expect(parsed.camera?.zones?.[0]?.points).toHaveLength(10);
   });
 });
 
