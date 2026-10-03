@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { BarChart3, BookOpen, Camera, History, LayoutDashboard, Settings, Shield, Timer } from 'lucide-react';
 import { useLiveStore } from '../stores/liveStore';
 import { CLASS_LABEL, formatDuration } from '../lib/format';
+import { Logo } from './Logo';
 import { Alt } from './ui';
 
 const LINKS = [
@@ -20,7 +21,7 @@ export function Sidebar() {
   return (
     <nav className="sidebar" aria-label="Main">
       <div className="brand">
-        <span className="brand-mark" aria-hidden />
+        <Logo className="brand-mark" />
         FocusProof
       </div>
       {LINKS.map(({ to, label, icon: Icon, end }) => (

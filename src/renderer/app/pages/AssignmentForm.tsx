@@ -19,12 +19,12 @@ export function TargetList(props: {
     props.onChange([...props.targets, ...paths.filter((p) => !existing.has(p)).map((path) => ({ path, kind }))]);
   };
   return (
-    <div style={{ display: 'grid', gap: 8 }}>
+    <div style={{ display: 'grid', gap: 8, minWidth: 0 }}>
       {props.targets.length === 0 && <p className="muted small">None</p>}
       {props.targets.map((t) => (
         <div key={t.path} className="row small" style={{ flexWrap: 'nowrap' }}>
           {t.kind === 'folder' ? <Folder size={14} aria-hidden /> : <FileText size={14} aria-hidden />}
-          <span className="truncate mono" style={{ flex: 1 }} title={t.path}>
+          <span className="truncate mono" style={{ flex: 1, minWidth: 0 }} title={t.path}>
             {t.path}
           </span>
           <button
@@ -117,7 +117,7 @@ export function AssignmentForm(props: { initial: Assignment | null; onClose: () 
           <input className="input" type="number" min={0} value={form.currentWordCount} onChange={set('currentWordCount')} />
         </Field>
         <div className="span-2">
-          <Field label="Monitored files (.txt, .md, .docx, code)">
+          <Field label="Monitored files (.txt, .md, .docx, code)" group>
             <TargetList targets={targets} onChange={setTargets} />
           </Field>
         </div>

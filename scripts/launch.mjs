@@ -34,7 +34,7 @@ function newestMtime(path) {
 
 function createShortcuts() {
   const target = join(root, 'FocusProof.cmd');
-  const icon = join(root, 'node_modules', 'electron', 'dist', 'electron.exe');
+  const icon = join(root, 'resources', 'icon.ico');
   // Desktop icon, plus a Start Menu entry so FocusProof shows up in Windows Search.
   const ps = ['Desktop', 'Programs']
     .map((folder) =>

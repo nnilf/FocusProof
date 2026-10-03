@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Camera } from 'lucide-react';
-import type { MonitoredTargetKind, MonitoringToggles } from '@shared/types';
+import type { Assignment, MonitoredTargetKind, MonitoringToggles } from '@shared/types';
 import { call } from '../lib/api';
 import { useApi } from '../hooks/useApi';
 import { useLiveStore } from '../stores/liveStore';
@@ -9,6 +9,11 @@ import { Alt, Card, ErrorText, Field, Loading, PageHeader, Toggle } from '../com
 import { Reasons } from '../components/IntervalInspector';
 import { TargetList } from './AssignmentForm';
 import { CLASS_COLOR_VAR, CLASS_LABEL, formatDuration, formatScore, formatSigned } from '../lib/format';
+
+function assignmentInput(a: Assignment) {
+  const { name, module, description, deadline, targetWordCount, currentWordCount, estimatedHours, notes } = a;
+  return { name, module, description, deadline, targetWordCount, currentWordCount, estimatedHours, notes };
+}
 
 function StartSession() {
   const location = useLocation();
@@ -27,13 +32,29 @@ function StartSession() {
     if (settings.data && !monitoring) setMonitoring(settings.data.monitoring);
   }, [settings.data, monitoring]);
 
+  // Pick a default assignment once; after that "No assignment" is a real choice.
+  const defaulted = useRef(false);
   useEffect(() => {
-    if (!assignments.data) return;
-    const id = assignmentId ?? assignments.data[0]?.id ?? null;
-    if (id !== assignmentId) setAssignmentId(id);
-    const a = assignments.data.find((x) => x.id === id);
+    if (!assignments.data || defaulted.current) return;
+    defaulted.current = true;
+    if (assignmentId === null) setAssignmentId(assignments.data[0]?.id ?? null);
+  }, [assignments.data, assignmentId]);
+
+  // Load the assignment's files only when the selection changes, not on every data reload.
+  const loadedFor = useRef<number | null | undefined>(undefined);
+  useEffect(() => {
+    if (!assignments.data || !defaulted.current || loadedFor.current === assignmentId) return;
+    loadedFor.current = assignmentId;
+    const a = assignments.data.find((x) => x.id === assignmentId);
     setTargets(a ? a.targets.map((t) => ({ path: t.path, kind: t.kind })) : []);
   }, [assignments.data, assignmentId]);
+
+  // Save file changes to the assignment so they're still there next time.
+  const changeTargets = (next: typeof targets): void => {
+    setTargets(next);
+    const a = assignments.data?.find((x) => x.id === assignmentId);
+    if (a) void call('assignments:update', { id: a.id, input: { ...assignmentInput(a), targets: next } }).catch(() => {});
+  };
 
   if (!assignments.data || !monitoring || !info.data) return <Loading />;
   const caps = info.data.capabilities;
@@ -70,8 +91,8 @@ function StartSession() {
               ))}
             </select>
           </Field>
-          <Field label="Monitored files">
-            <TargetList targets={targets} onChange={setTargets} />
+          <Field label="Monitored files" group>
+            <TargetList targets={targets} onChange={changeTargets} />
           </Field>
         </div>
       </Card>

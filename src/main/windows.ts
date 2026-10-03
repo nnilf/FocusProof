@@ -1,6 +1,6 @@
 import { BrowserWindow, type WebContents } from 'electron';
 import { CAMERA_CHANNELS, type CameraConfig } from '@shared/ipc/camera';
-import { preloadPath } from './paths';
+import { preloadPath, resourcePath } from './paths';
 import { APP_ORIGIN, devServerUrl } from './security';
 
 export const secureWebPreferences = (preload: string): Electron.WebPreferences => ({
@@ -28,6 +28,7 @@ export function createMainWindow(): BrowserWindow {
     show: false,
     backgroundColor: '#111214',
     title: 'FocusProof',
+    icon: resourcePath('icon.png'),
     autoHideMenuBar: true,
     webPreferences: secureWebPreferences(preloadPath('index')),
   });

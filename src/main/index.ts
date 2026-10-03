@@ -30,6 +30,8 @@ import { OverlayWindow } from './overlay/OverlayWindow';
 import { CameraWindow, createMainWindow } from './windows';
 
 registerSchemes();
+// Own taskbar identity, so Windows shows the FocusProof icon rather than grouping under Electron.
+app.setAppUserModelId('com.focusproof.app');
 
 // Allows isolated data directories for testing or multiple profiles.
 const userDataOverride = process.env['FOCUSPROOF_USER_DATA'];

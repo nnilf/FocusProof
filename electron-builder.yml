@@ -13,8 +13,11 @@ extraResources:
     to: models
   - from: resources/win32
     to: win32
+  - from: resources/icon.png
+    to: icon.png
 win:
   target: nsis
+  icon: resources/icon.ico
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

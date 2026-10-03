@@ -88,13 +88,21 @@ export function Toggle(props: {
   );
 }
 
-export function Field(props: { label: string; help?: ReactNode; children: ReactNode }) {
-  return (
-    <label className="field">
+/** `group` renders a div instead of a label, for fields holding buttons (a label forwards clicks to its first button). */
+export function Field(props: { label: string; help?: ReactNode; group?: boolean; children: ReactNode }) {
+  const body = (
+    <>
       <span>{props.label}</span>
       {props.children}
       {props.help && <span className="help">{props.help}</span>}
-    </label>
+    </>
+  );
+  return props.group ? (
+    <div className="field" role="group" aria-label={props.label}>
+      {body}
+    </div>
+  ) : (
+    <label className="field">{body}</label>
   );
 }
 
