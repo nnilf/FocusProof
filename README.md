@@ -1,13 +1,14 @@
 # FocusProof
 
-FocusProof is a study timer that only counts the time you're actually working. It tracks your sessions and shows how much was **Actual Learning Time (ALT)**: time spent working, not time spent on YouTube or away from your desk.
+**How much of your study session was actually work?**
+
+A three-hour session rarely means three hours of work. FocusProof is a study timer that only counts the time you're actually working. It shows how much of each session was **Actual Learning Time (ALT)**: time spent working, not time spent on YouTube or away from your desk.
 
 Everything runs and stays on your computer.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/today-dark.png">
-  <img src="docs/screenshots/today-light.png" alt="FocusProof's Today screen: today's study time, a strip of the day's sessions, and the start bar">
-</picture>
+**[Download for Windows](https://github.com/nnilf/FocusProof/releases/latest)** · Install → start a session → work as normal → see your report
+
+<img src="docs/screenshots/check-demo.gif" alt="The calibration check: a webcam view with the face outlined and a line showing which way the head points, a map of the screens and areas it was calibrated on, and every signal behind the current status updating live">
 
 ## Starting the app
 
@@ -39,6 +40,11 @@ npm run shortcut
 3. Press **End session** to see your report: ALT, a timeline of your session, and words written.
 4. **Today** shows the day as a strip, with each session at the time it happened. **Progress** shows your study time over the last 7, 30 or 90 days, and every session.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/today-dark.png">
+  <img src="docs/screenshots/today-light.png" alt="FocusProof's Today screen: today's study time, a strip of the day's sessions, and the start bar">
+</picture>
+
 <table>
   <tr>
     <td width="50%"><picture>
@@ -68,12 +74,7 @@ During a session, a small dot in the corner of your screen shows your current st
 
 **Two monitors with the webcam on?** Go to **Settings** (the gear, top right) **→ Webcam** and look at each screen when asked. Looking at either screen then counts as focused.
 
-To see what the webcam picks up, press **Check** in the same place. A window opens with your camera, where it thinks you're facing, and every signal behind the current status. Nothing in it is saved.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/check-dark.png">
-  <img src="docs/screenshots/check-light.png" alt="Calibration check: the webcam with the face outlined and a line showing where the head points, a map of the calibrated screens and areas, and the signals behind the current status">
-</picture>
+To see what the webcam picks up, press **Check** in the same place. A window opens with your camera, where it thinks you're facing, and every signal behind the current status (the animation at the top). The line shows which way your head points, not your eyes. Nothing in it is saved.
 
 **Write on a paper notepad?** Add it under **Work areas** so looking at it counts as focused.
 
