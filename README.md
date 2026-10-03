@@ -62,6 +62,11 @@ During a session, a small dot in the corner of your screen shows your current st
 
 To see what the webcam picks up, press **Check** in the same place. A window opens with your camera, where it thinks you're facing, and every signal behind the current status. Nothing in it is saved.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/check-dark.png">
+  <img src="docs/screenshots/check-light.png" alt="Calibration check: the webcam with the face outlined and a line showing where the head points, a map of the calibrated screens and areas, and the signals behind the current status">
+</picture>
+
 **Write on a paper notepad?** Add it under **Work areas** so looking at it counts as focused.
 
 **A laptop, TV or phone nearby?** Add it under **Distraction areas** in the same place. Looking at it then counts as distracted. You can also choose how looking away from all screens is counted (Ignore, Neutral or Distracted).
