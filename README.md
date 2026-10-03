@@ -35,6 +35,13 @@ npm run shortcut
 
 ## Using it
 
+The first time you open FocusProof, **Setup** asks which apps and websites count as study and which are distracting, from ready-made groups. Run it again any time from **Settings → What counts as study → Run setup**; only what you toggle changes.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/setup-dark.png">
+  <img src="docs/screenshots/setup-light.png" alt="Setup: groups of study apps and websites on the left and distracting ones on the right, each with a switch and a chip per app or site">
+</picture>
+
 1. On **Today**, choose **New assignment** and add what you're working on, with the files to watch (e.g. your essay `.docx`).
 2. Pick it in the start bar and press **Start**. The window switches to a simple timer. Work as normal.
 3. Press **End session** to see your report: ALT, a timeline of your session, and words written.
@@ -72,11 +79,11 @@ Click any block on a report's timeline to see why it was classified that way.
 
 During a session, a small dot in the corner of your screen shows your current state: **green** for productive, **blue** for neutral, a **red ring** for distracted, and **grey** for away. Change the corner, display, size and any extra details in **Settings → Focus indicator**.
 
-**Two monitors with the webcam on?** Go to **Settings** (the gear, top right) **→ Webcam** and look at each screen when asked. Looking at either screen then counts as focused.
+**Two monitors with the webcam on?** Go to **Settings** (the gear, top right) **→ Webcam** and press **Calibrate**. Follow the dot as it moves around each screen; FocusProof combines your head and eye direction, so even a laptop and the monitor just above it are told apart. It then checks a few random points and shows the score before you save. Looking at any screen then counts as focused.
 
-To see what the webcam picks up, press **Check** in the same place. A window opens with your camera, where it thinks you're facing, and every signal behind the current status (the animation at the top). The line shows which way your head points, not your eyes. Nothing in it is saved.
+To see what the webcam picks up, press **Check** in the same place. A window opens with your camera, where it thinks you're facing, and every signal behind the current status (the animation at the top). The line on the video shows which way your head points; the map below also uses your eyes once you've calibrated. Nothing in it is saved.
 
-**Write on a paper notepad?** Add it under **Work areas** so looking at it counts as focused.
+**Write on a paper notepad?** Add it under **Work areas** and look at its top, centre and bottom when asked, so looking at it counts as focused.
 
 **A laptop, TV or phone nearby?** Add it under **Distraction areas** in the same place. Looking at it then counts as distracted. You can also choose how looking away from all screens is counted (Ignore, Neutral or Distracted).
 

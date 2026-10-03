@@ -1,6 +1,6 @@
 // Regenerates the README screenshots from demo data, in light and dark.
 //   npm run screenshots              all of them
-//   npm run screenshots -- check     only the named ones (today, progress, report, settings, session, check)
+//   npm run screenshots -- check     only the named ones (today, progress, report, settings, setup, session, check)
 // The calibration check uses your real webcam: sit in front of it, facing your main screen. To use a
 // recording instead, set FOCUSPROOF_FAKE_CAMERA to a .mjpeg or .y4m file (Chromium's fake camera).
 // Runs the app on a throwaway profile (FOCUSPROOF_USER_DATA), so your own data is never touched,
@@ -108,6 +108,8 @@ try {
   }
   await open('#/settings');
   await shoot('settings');
+  await open('#/setup');
+  await shoot('setup');
 
   // The live view shows real monitoring of this machine. In the throwaway profile, count the
   // FocusProof window (which is in front) as a study app so the shot reads like a real session.
