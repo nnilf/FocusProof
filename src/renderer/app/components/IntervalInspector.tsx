@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { ActivityInterval, ClassificationReason, TimelineBlock, WeightKey } from '@shared/types';
+import type { ActivityInterval, ClassificationReason, IntervalEvaluation, TimelineBlock, WeightKey } from '@shared/types';
 import { CLASS_LABEL, formatDuration, formatPct, formatScore, formatTime } from '../lib/format';
 import { ClassChip } from './ui';
 
@@ -35,7 +35,9 @@ export function Reasons(props: { reasons: ClassificationReason[] }) {
 }
 
 /** Shows how each signal contributed to an interval's score: the "why" behind a classification. */
-export function SignalBreakdown(props: { interval: ActivityInterval }) {
+export function SignalBreakdown(props: {
+  interval: Pick<IntervalEvaluation, 'contributions' | 'rawScore' | 'combinedScore' | 'classification'>;
+}) {
   const i = props.interval;
   return (
     <div style={{ display: 'grid', gap: 8 }}>

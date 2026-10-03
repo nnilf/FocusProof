@@ -13,7 +13,7 @@ export const secureWebPreferences = (preload: string): Electron.WebPreferences =
   spellcheck: false,
 });
 
-export function pageUrl(page: 'index' | 'camera' | 'overlay'): string {
+export function pageUrl(page: 'index' | 'camera' | 'overlay' | 'check'): string {
   const dev = devServerUrl();
   const file = `${page}.html`;
   return dev ? `${dev}/${file}` : `${APP_ORIGIN}/${file}`;

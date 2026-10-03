@@ -55,6 +55,7 @@ const SCHEMAS: { [C in IpcChannel]: z.ZodType } = {
   'calibration:start': emptySchema,
   'calibration:capture': calibrationCaptureSchema,
   'calibration:stop': emptySchema,
+  'calibration:check': emptySchema,
 };
 
 export function registerHandlers(handlers: HandlerMap, isTrustedSender: (event: IpcMainInvokeEvent) => boolean): void {

@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { CAMERA_CHANNELS } from '@shared/ipc/camera';
+import { CHECK_CHANNELS } from '@shared/ipc/check';
 import { startOfDay } from '@shared/dates';
 import type { IpcEventName, IpcEvents } from '@shared/ipc/contract';
 import { OVERLAY_CHANNELS } from '@shared/ipc/overlay';
@@ -23,6 +24,7 @@ import { resourcePath } from './paths';
 import { configurePermissions, hardenContents, isAppUrl, registerAppProtocol, registerSchemes } from './security';
 import { AnalyticsService } from './services/AnalyticsService';
 import { CalibrationService } from './services/CalibrationService';
+import { CheckService } from './services/CheckService';
 import { DemoDataService } from './services/DemoDataService';
 import { ReportService } from './services/ReportService';
 import { SessionManager } from './services/SessionManager';
@@ -98,11 +100,21 @@ async function bootstrap(): Promise<void> {
       emit('session:live', status);
       tray?.update(status);
       overlay?.update(status);
+      check.onSessionUpdate();
     },
     emitEnded: (sessionId) => {
       emit('session:ended', { sessionId });
       emit('data:changed', { scope: 'sessions' });
+      check.afterSessionEnd();
     },
+  });
+
+  const check = new CheckService({
+    settings,
+    monitor,
+    focus,
+    session: () => sessionManager.lastEvaluation(),
+    isSessionRunning: () => sessionManager.activeSessionId !== null,
   });
 
   const calibration = new CalibrationService({
@@ -146,8 +158,9 @@ async function bootstrap(): Promise<void> {
         });
         return res.canceled ? [] : res.filePaths;
       },
-      'sessions:start': (req) => {
+      'sessions:start': async (req) => {
         if (calibration.active) throw new Error('Finish webcam calibration before starting a session.');
+        await check.beforeSessionStart();
         return sessionManager.start(req);
       },
       'sessions:end': () => sessionManager.end(),
@@ -167,7 +180,10 @@ async function bootstrap(): Promise<void> {
         changed('sessions', sessions.delete(req.id));
       },
       'sessions:unfinished': () => sessionManager.unfinished(),
-      'sessions:resume': (req) => sessionManager.resume(req.id),
+      'sessions:resume': async (req) => {
+        await check.beforeSessionStart();
+        return sessionManager.resume(req.id);
+      },
       'sessions:recover': (req) => changed('sessions', sessionManager.recover(req.id)),
       'sessions:discard': (req) => changed('sessions', sessionManager.discard(req.id)),
       'analytics:dashboard': () => {
@@ -207,9 +223,16 @@ async function bootstrap(): Promise<void> {
           bounds: d.bounds,
         }));
       },
-      'calibration:start': () => calibration.start(),
+      'calibration:start': () => {
+        if (check.open) throw new Error('Close the calibration check before calibrating.');
+        return calibration.start();
+      },
       'calibration:capture': (req) => calibration.capture(req.kind, req.displayId, req.label),
       'calibration:stop': () => calibration.stop(),
+      'calibration:check': () => {
+        if (calibration.active) throw new Error('Finish webcam calibration first.');
+        check.show();
+      },
       'privacy:deleteAll': () => {
         if (sessionManager.activeSessionId) throw new Error('End the running session first');
         db?.exec('DELETE FROM sessions; DELETE FROM assignments;');
@@ -221,14 +244,14 @@ async function bootstrap(): Promise<void> {
   );
 
   // Camera window channels: accept only derived numbers, and only from the camera window.
-  ipcMain.handle(CAMERA_CHANNELS.model, async (event) => {
-    if (!cameraWindow.isCameraContents(event.sender)) return null;
+  const readModel = async (): Promise<Uint8Array | null> => {
     try {
       return new Uint8Array(await readFile(modelPath));
     } catch {
       return null;
     }
-  });
+  };
+  ipcMain.handle(CAMERA_CHANNELS.model, (event) => (cameraWindow.isCameraContents(event.sender) ? readModel() : null));
   ipcMain.on(CAMERA_CHANNELS.sample, (event, raw: unknown) => {
     if (!cameraWindow.isCameraContents(event.sender)) return;
     const parsed = cameraSampleSchema.safeParse(raw);
@@ -247,7 +270,20 @@ async function bootstrap(): Promise<void> {
     if (calibration.active) calibration.onCameraStatus(parsed.data.state, parsed.data.message);
   });
 
-  configurePermissions((wc) => cameraWindow.isCameraContents(wc));
+  // Calibration check window: the same derived numbers, only from that window.
+  ipcMain.handle(CHECK_CHANNELS.model, (event) => (check.isCheckContents(event.sender) ? readModel() : null));
+  ipcMain.on(CHECK_CHANNELS.sample, (event, raw: unknown) => {
+    if (!check.isCheckContents(event.sender)) return;
+    const parsed = cameraSampleSchema.safeParse(raw);
+    if (parsed.success) check.onSample(parsed.data);
+  });
+  ipcMain.on(CHECK_CHANNELS.status, (event, raw: unknown) => {
+    if (!check.isCheckContents(event.sender)) return;
+    const parsed = cameraStatusSchema.safeParse(raw);
+    if (parsed.success) check.onCameraStatus(parsed.data.state);
+  });
+
+  configurePermissions((wc) => cameraWindow.isCameraContents(wc) || check.isCheckContents(wc));
   app.on('web-contents-created', (_e, contents) => hardenContents(contents));
 
   mainWindow = createMainWindow();
@@ -264,6 +300,7 @@ async function bootstrap(): Promise<void> {
     quitting = true;
     // Keep the session marked active so it can be resumed or recovered on next launch.
     calibration.stop();
+    check.close();
     void sessionManager.suspend().finally(() => {
       overlay?.destroy();
       tray?.destroy();

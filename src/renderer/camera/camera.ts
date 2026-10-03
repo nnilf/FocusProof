@@ -1,4 +1,5 @@
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
+import { headPose } from '@shared/focus/gaze';
 import type { CameraBridge, CameraConfig } from '@shared/ipc/camera';
 
 declare global {
@@ -10,19 +11,6 @@ declare global {
 const bridge = window.focusproofCamera;
 const video = document.getElementById('video') as HTMLVideoElement;
 let started = false;
-
-const toDeg = (rad: number): number => (rad * 180) / Math.PI;
-
-/** Head yaw/pitch from MediaPipe's 4x4 column-major facial transformation matrix. */
-function headPose(m: ArrayLike<number>): { yawDeg: number; pitchDeg: number } {
-  const r20 = m[2] ?? 0;
-  const r21 = m[6] ?? 0;
-  const r22 = m[10] ?? 1;
-  return {
-    yawDeg: toDeg(Math.asin(Math.max(-1, Math.min(1, -r20)))),
-    pitchDeg: toDeg(Math.atan2(r21, r22)),
-  };
-}
 
 async function start(config: CameraConfig): Promise<void> {
   if (started) return;

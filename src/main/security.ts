@@ -38,7 +38,7 @@ export function isAppUrl(url: string): boolean {
   return url.startsWith(APP_ORIGIN) || (dev !== null && url.startsWith(dev));
 }
 
-/** Camera access is granted only to the dedicated camera window, and only for video. */
+/** Camera access is granted only to the camera and calibration-check windows, and only for video. */
 export function configurePermissions(isCameraContents: (wc: WebContents) => boolean): void {
   const ses = session.defaultSession;
   ses.setPermissionRequestHandler((wc, permission, callback, details) => {

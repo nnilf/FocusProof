@@ -49,6 +49,7 @@ interface ActiveState {
   netWordsByPath: Map<string, { baseline: number | null; latest: number | null }>;
   docChangeEvents: number;
   lastEval: IntervalEvaluation | null;
+  lastFrame: SignalFrame | null;
   warnings: Set<string>;
   stopping: boolean;
 }
@@ -140,6 +141,14 @@ export class SessionManager {
     if (this.active) this.deps.emitLive(this.liveStatus());
   }
 
+  /** The running session's latest evaluated interval and the observations behind it. */
+  lastEvaluation(): { frame: SignalFrame; evaluation: IntervalEvaluation; intervalMs: number; nextAt: number } | null {
+    const a = this.active;
+    if (!a?.lastEval || !a.lastFrame) return null;
+    const intervalMs = this.deps.settings.get().analysisIntervalSec * 1000;
+    return { frame: a.lastFrame, evaluation: a.lastEval, intervalMs, nextAt: a.lastTickTs + intervalMs };
+  }
+
   liveStatus(): LiveStatus {
     const a = this.active;
     if (!a) throw new Error('No session is running');
@@ -192,6 +201,7 @@ export class SessionManager {
       netWordsByPath,
       docChangeEvents: 0,
       lastEval: null,
+      lastFrame: null,
       warnings: new Set(),
       stopping: false,
     };
@@ -304,6 +314,7 @@ export class SessionManager {
     else if (ev.classification === 'neutral') a.altMs += ms * settings.engine.neutralContribution;
     a.docChangeEvents += frame.documents?.changeEvents ?? 0;
     a.lastEval = ev;
+    a.lastFrame = frame;
     if (ev.awaySinceTs !== null) {
       const changed = this.deps.sessions.markAwaySince(a.session.id, ev.awaySinceTs);
       if (changed > 0) a.altMs = this.deps.sessions.altMs(a.session.id, settings.engine.neutralContribution);

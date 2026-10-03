@@ -76,6 +76,7 @@ export interface IpcContract {
     res: FocusZone & { samples: number };
   };
   'calibration:stop': { req: Record<string, never>; res: void };
+  'calibration:check': { req: Record<string, never>; res: void };
 }
 
 export type IpcChannel = keyof IpcContract;

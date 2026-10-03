@@ -241,6 +241,9 @@ export function CameraCalibration(props: { zones: FocusZone[]; onSaved: () => vo
               <button className="btn primary" onClick={() => void begin('screens')} disabled={displays.length === 0}>
                 {screens.length ? 'Recalibrate' : 'Calibrate'}
               </button>
+              <button className="btn" onClick={() => void call('calibration:check', {}).catch(fail)}>
+                Check
+              </button>
               {screens.length > 0 ? (
                 <span className="small secondary">{screens.map((z) => z.label).join(', ')}</span>
               ) : (

@@ -60,6 +60,8 @@ During a session, a small dot in the corner of your screen shows your current st
 
 **Two monitors with the webcam on?** Go to **Settings** (the gear, top right) **→ Webcam** and look at each screen when asked. Looking at either screen then counts as focused.
 
+To see what the webcam picks up, press **Check** in the same place. A window opens with your camera, where it thinks you're facing, and every signal behind the current status. Nothing in it is saved.
+
 **Write on a paper notepad?** Add it under **Work areas** so looking at it counts as focused.
 
 **A laptop, TV or phone nearby?** Add it under **Distraction areas** in the same place. Looking at it then counts as distracted. You can also choose how looking away from all screens is counted (Ignore, Neutral or Distracted).
