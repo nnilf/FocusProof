@@ -11,7 +11,15 @@ Everything runs and stays on your computer.
 
 ## Starting the app
 
-You need **Windows 10/11** and **[Node.js](https://nodejs.org) 22 or newer**.
+You need **Windows 10/11**.
+
+### Installer
+
+Download **FocusProof Setup** from the [latest release](https://github.com/nnilf/FocusProof/releases/latest) and run it. The installer isn't code-signed, so Windows may warn you: choose **More info → Run anyway**.
+
+### From the source
+
+You also need **[Node.js](https://nodejs.org) 22 or newer**.
 
 1. Open the `FocusProof` folder.
 2. Double-click **`FocusProof.cmd`**.
