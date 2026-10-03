@@ -13,7 +13,7 @@ You need **Windows 10/11** and **[Node.js](https://nodejs.org) 22 or newer**.
 
 The first start takes a few minutes while it installs. After that, it opens straight away.
 
-To get a desktop icon, run this once in a terminal in the folder:
+To get a desktop icon and find FocusProof in Windows Search, run this once in a terminal in the folder:
 
 ```
 npm run shortcut

@@ -1,7 +1,7 @@
 // One-step launcher: installs dependencies and rebuilds only when needed, then starts FocusProof.
 //   node scripts/launch.mjs             start the app
 //   node scripts/launch.mjs --rebuild   force a rebuild first
-//   node scripts/launch.mjs --shortcut  create a desktop shortcut to FocusProof.cmd
+//   node scripts/launch.mjs --shortcut  create desktop and Start Menu shortcuts to FocusProof.cmd
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -32,21 +32,26 @@ function newestMtime(path) {
   return newest;
 }
 
-function createShortcut() {
+function createShortcuts() {
   const target = join(root, 'FocusProof.cmd');
   const icon = join(root, 'node_modules', 'electron', 'dist', 'electron.exe');
-  const ps = [
-    '$s = (New-Object -ComObject WScript.Shell).CreateShortcut([IO.Path]::Combine([Environment]::GetFolderPath("Desktop"), "FocusProof.lnk"))',
-    `$s.TargetPath = "${target}"`,
-    `$s.WorkingDirectory = "${root}"`,
-    existsSync(icon) ? `$s.IconLocation = "${icon},0"` : '',
-    '$s.WindowStyle = 7',
-    '$s.Save()',
-  ]
-    .filter(Boolean)
+  // Desktop icon, plus a Start Menu entry so FocusProof shows up in Windows Search.
+  const ps = ['Desktop', 'Programs']
+    .map((folder) =>
+      [
+        `$s = (New-Object -ComObject WScript.Shell).CreateShortcut([IO.Path]::Combine([Environment]::GetFolderPath("${folder}"), "FocusProof.lnk"))`,
+        `$s.TargetPath = "${target}"`,
+        `$s.WorkingDirectory = "${root}"`,
+        existsSync(icon) ? `$s.IconLocation = "${icon},0"` : '',
+        '$s.WindowStyle = 7',
+        '$s.Save()',
+      ]
+        .filter(Boolean)
+        .join('; '),
+    )
     .join('; ');
   const res = spawnSync('powershell.exe', ['-NoProfile', '-Command', ps], { stdio: 'inherit' });
-  log(res.status === 0 ? 'Desktop shortcut created.' : 'Could not create the shortcut.');
+  log(res.status === 0 ? 'Desktop and Start Menu shortcuts created.' : 'Could not create the shortcuts.');
 }
 
 if (!existsSync(join(root, 'node_modules', 'electron'))) {
@@ -55,7 +60,7 @@ if (!existsSync(join(root, 'node_modules', 'electron'))) {
 }
 
 if (args.has('--shortcut')) {
-  createShortcut();
+  createShortcuts();
   process.exit(0);
 }
 
