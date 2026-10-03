@@ -1,4 +1,20 @@
-import type { Settings, SettingsPatch } from '../types';
+import type { AppRules, Settings, SettingsPatch } from '../types';
+
+/** AI chat assistants, used for research and testing ideas: productive by default. */
+export const AI_ASSISTANT_DEFAULTS = {
+  domains: [
+    'claude.ai',
+    'chatgpt.com',
+    'chat.openai.com',
+    'gemini.google.com',
+    'copilot.microsoft.com',
+    'perplexity.ai',
+    'notebooklm.google.com',
+  ],
+  apps: ['claude', 'chatgpt'],
+  // "claude" alone would match too many unrelated window titles.
+  keywords: ['chatgpt'],
+};
 
 export const DEFAULT_SETTINGS: Settings = {
   engine: {
@@ -46,6 +62,7 @@ export const DEFAULT_SETTINGS: Settings = {
       'cmd',
       'texstudio',
       'anki',
+      ...AI_ASSISTANT_DEFAULTS.apps,
     ],
     distractingApps: ['steam', 'epicgameslauncher', 'discord', 'whatsapp', 'telegram', 'netflix', 'battle.net'],
     excludedApps: ['focusproof', 'electron', 'explorer', 'lockapp', 'searchhost', 'shellexperiencehost'],
@@ -66,6 +83,7 @@ export const DEFAULT_SETTINGS: Settings = {
       'khan academy',
       'coursera',
       'pubmed',
+      ...AI_ASSISTANT_DEFAULTS.keywords,
     ],
     distractingKeywords: [
       'youtube',
@@ -96,6 +114,7 @@ export const DEFAULT_SETTINGS: Settings = {
       'khanacademy.org',
       'coursera.org',
       'developer.mozilla.org',
+      ...AI_ASSISTANT_DEFAULTS.domains,
     ],
     distractingDomains: [
       'netflix.com',
@@ -143,5 +162,22 @@ export function mergeSettings(base: Settings, patch: SettingsPatch): Settings {
       ...patch.overlay,
       details: { ...base.overlay.details, ...patch.overlay?.details },
     },
+  };
+}
+
+/**
+ * Adds the AI assistant rules to settings saved before they were defaults. Entries already present,
+ * or that the user marked as distracting, are left alone.
+ */
+export function addAiAssistants(apps: AppRules): AppRules {
+  const merge = (list: string[], add: string[], distracting: string[]): string[] => {
+    const has = new Set([...list, ...distracting].map((v) => v.trim().toLowerCase()));
+    return [...list, ...add.filter((v) => !has.has(v))];
+  };
+  return {
+    ...apps,
+    productiveDomains: merge(apps.productiveDomains, AI_ASSISTANT_DEFAULTS.domains, apps.distractingDomains),
+    productiveApps: merge(apps.productiveApps, AI_ASSISTANT_DEFAULTS.apps, apps.distractingApps),
+    productiveKeywords: merge(apps.productiveKeywords, AI_ASSISTANT_DEFAULTS.keywords, apps.distractingKeywords),
   };
 }

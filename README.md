@@ -77,6 +77,8 @@ Every few seconds, FocusProof labels what you're doing:
 | Distracted | Distracting sites or apps, or inactive on non-study apps | No |
 | Away | Not at the computer | No |
 
+AI chat assistants such as Claude and ChatGPT count as study sites, since they're often used for research and testing ideas. Remove them under **Settings → Websites** if you'd rather they didn't.
+
 ALT is an estimate based on your activity. It can't measure how much you learned.
 
 ## Privacy

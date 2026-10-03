@@ -1,9 +1,11 @@
 import type { Settings, SettingsPatch } from '@shared/types';
-import { DEFAULT_SETTINGS, mergeSettings } from '@shared/settings/defaults';
+import { addAiAssistants, DEFAULT_SETTINGS, mergeSettings } from '@shared/settings/defaults';
 import { settingsPatchSchema } from '@shared/ipc/schemas';
 import type { Db } from '../connection';
 
 const SETTINGS_KEY = 'settings';
+/** Set once AI assistant rules have been added to saved settings, so removing one sticks. */
+const AI_ASSISTANTS_KEY = 'aiAssistantsAdded';
 
 export class SettingsRepository {
   private cache: Settings | null = null;
@@ -16,6 +18,10 @@ export class SettingsRepository {
     // Stored settings are re-validated so a hand-edited or older value can never break the app.
     const parsed = settingsPatchSchema.safeParse(stored ?? {});
     this.cache = mergeSettings(DEFAULT_SETTINGS, parsed.success ? (parsed.data as SettingsPatch) : {});
+    if (this.getValue(AI_ASSISTANTS_KEY) !== true) {
+      this.setValue(AI_ASSISTANTS_KEY, true);
+      if (stored !== undefined) this.update({ apps: addAiAssistants(this.cache.apps) });
+    }
     return this.cache;
   }
 
