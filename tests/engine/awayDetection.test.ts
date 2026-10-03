@@ -102,6 +102,7 @@ describe('away detection (regression: away from desk with Word focused)', () => 
       settings,
     );
     expect(evaluation.reasons.some((r) => r.code === 'reading-grace')).toBe(false);
+    expect(evaluation.reasons.some((r) => r.code === 'active-reading')).toBe(false);
   });
 
   it('relabels the whole idle stretch when the no-camera idle threshold is reached', () => {

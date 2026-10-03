@@ -41,6 +41,16 @@ export function buildAssignmentKeywords(
   return [...words];
 }
 
+/** Whether a window title names one of the monitored files, e.g. "Essay.docx - Word". */
+export function isDraftTitle(title: string | null, targets: SessionTarget[]): boolean {
+  if (!title) return false;
+  const names = targets
+    .filter((t) => t.kind === 'file')
+    .map((t) => basename(t.path, extname(t.path)).toLowerCase())
+    .filter((n) => n.length >= 3);
+  return findKeyword(title, names) !== null;
+}
+
 /**
  * Rule-based relevance of the foreground application, ordered from most to least specific. A
  * website's domain beats title keywords; a title naming the assignment beats everything except

@@ -18,6 +18,8 @@ const ABSENT_PRESENCE = 0.25;
 const LOOKING_AWAY_FOCUS = 0.4;
 const PARTIAL_FOCUS = 0.7;
 const LOW_INPUT = 0.2;
+/** Webcam presence that confirms the user is at the screen while reading. */
+const READING_PRESENCE = 0.75;
 /** Share of an interval's webcam samples needed to say where the user was looking. */
 const GAZE_MAJORITY = 0.5;
 
@@ -194,16 +196,36 @@ export class WeightedSignalEngine implements LearningTimeEngine {
       return score;
     }
 
+    const reading = ctx.relevantContent && !ctx.absent && !offScreenCapped;
+
+    // Active reading: study material (not the user's own draft) with a scroll or key press within
+    // the reading pause counts as productive. A screenful of a paper takes a few minutes to read,
+    // so input is sparse; the webcam seeing the user face the screen extends the pause to "away".
+    const facingScreen =
+      cam !== null && cam.samples > 0 && cam.presence >= READING_PRESENCE && cam.focus >= PARTIAL_FOCUS;
+    const pauseMs = facingScreen ? Math.max(ctx.awayMs, settings.readingPauseSec * 1000) : settings.readingPauseSec * 1000;
+    if (reading && !win?.isDraft && ctx.idleMs !== null && idle < pauseMs && score < settings.productiveThreshold) {
+      add(
+        'override',
+        'active-reading',
+        `Reading study material (last scroll or key ${minutes(idle)} ago${facingScreen ? ', facing the screen' : ''})`,
+      );
+      return settings.productiveThreshold;
+    }
+
     // Reading grace: relevant material with little input is reading, not inactivity, unless the
-    // webcam shows nobody is there or that they are looking elsewhere.
-    if (ctx.relevantContent && !ctx.absent && !offScreenCapped && idle < ctx.awayMs && score < settings.neutralThreshold) {
+    // webcam shows nobody is there or that they are looking elsewhere. The user's own draft
+    // without edits stays here: looking at the assignment is not the same as working on it.
+    if (reading && idle < ctx.awayMs && score < settings.neutralThreshold) {
       score = settings.neutralThreshold;
       add(
         'override',
         'reading-grace',
-        lowInput
-          ? 'Study material in focus with little input; treated as reading'
-          : 'Study material in focus; score raised to neutral',
+        win?.isDraft
+          ? 'Assignment open with no edits; counted as neutral'
+          : lowInput
+            ? 'Study material in focus with little input; treated as reading'
+            : 'Study material in focus; score raised to neutral',
       );
     }
     return score;

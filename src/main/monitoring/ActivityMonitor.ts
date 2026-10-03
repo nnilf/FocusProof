@@ -2,7 +2,7 @@ import type { MonitoringToggles, SessionTarget, SignalFrame, WindowObservation }
 import { ActiveWindowMonitor } from './ActiveWindowMonitor';
 import { InputActivityMonitor } from './InputActivityMonitor';
 import type { Win32ActivitySource } from './Win32ActivitySource';
-import { classifyApplication, type RelevanceContext } from './relevanceRules';
+import { classifyApplication, isDraftTitle, type RelevanceContext } from './relevanceRules';
 import type { ScreenAnalyzer, ScreenFrame } from './screen/ScreenAnalyzer';
 import type { FocusAnalyzer } from './focus/FocusAnalyzer';
 import type { DocumentActivityAnalyzer, DocumentChangeRecord } from './documents/DocumentActivityAnalyzer';
@@ -106,7 +106,7 @@ export class ActivityMonitor {
       const fg = this.windowMonitor.drain();
       if (fg) {
         const cls = classifyApplication(fg.processName, fg.title, cfg.relevance, fg.domain);
-        window = { processName: fg.processName, title: fg.title, domain: fg.domain, ...cls };
+        window = { processName: fg.processName, title: fg.title, domain: fg.domain, ...cls, isDraft: isDraftTitle(fg.title, cfg.targets) };
       }
     }
 

@@ -164,13 +164,60 @@ describe('WeightedSignalEngine.evaluate', () => {
     const { evaluation } = run(
       frame({
         window: { processName: 'chrome', title: 'JSTOR – paper.pdf', domain: null, category: 'productive', relevance: 0.8, matchedRule: 'keyword: jstor' },
-        input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: 90_000 },
+        input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs: 200_000 },
         documents: { ...frame().documents!, changeEvents: 0, msSinceLastChange: null },
       }),
       { contextEma: 0, absentMs: 0, absentSinceTs: null, intervalsEvaluated: 10 },
     );
     expect(evaluation.classification).toBe('neutral');
     expect(evaluation.reasons.some((r) => r.code === 'reading-grace')).toBe(true);
+  });
+
+  describe('active reading', () => {
+    const paper = { processName: 'acrobat', title: 'heat-islands-review.pdf - Adobe Acrobat', domain: null, category: 'productive' as const, relevance: 1, matchedRule: 'app: acrobat' };
+    const reading = (idleMs: number, extra: Partial<SignalFrame> = {}) =>
+      run(
+        frame({
+          window: paper,
+          input: { keyboardEvents: 0, mouseEvents: 0, activeSeconds: 0, idleMs },
+          documents: { ...frame().documents!, changeEvents: 0, msSinceLastChange: null },
+          ...extra,
+        }),
+        { contextEma: 0.45, absentMs: 0, absentSinceTs: null, intervalsEvaluated: 10 },
+      ).evaluation;
+    const facing = { samples: 10, presence: 1, focus: 1, lookingAwayMs: 0, distractionRatio: 0, offScreenRatio: 0, distractionLabel: null, workAreaLabel: null };
+
+    it('counts a paper scrolled within the reading pause as productive', () => {
+      const ev = reading(60_000);
+      expect(ev.classification).toBe('productive');
+      expect(ev.reasons.some((r) => r.code === 'active-reading')).toBe(true);
+    });
+
+    it('falls back to neutral after the reading pause', () => {
+      const ev = reading(settings.readingPauseSec * 1000 + 20_000);
+      expect(ev.classification).toBe('neutral');
+      expect(ev.reasons.some((r) => r.code === 'active-reading')).toBe(false);
+    });
+
+    it('extends the pause while the webcam sees the user facing the screen', () => {
+      expect(reading(240_000, { camera: facing }).classification).toBe('productive');
+      expect(reading(240_000).classification).toBe('neutral');
+    });
+
+    it('keeps the assignment draft without edits neutral', () => {
+      const ev = reading(60_000, { window: { ...paper, processName: 'winword', title: 'Essay.docx - Word', isDraft: true } });
+      expect(ev.classification).toBe('neutral');
+      expect(ev.reasons.some((r) => r.code === 'active-reading')).toBe(false);
+    });
+
+    it('does not override looking at a distraction area', () => {
+      const ev = reading(30_000, { camera: { ...facing, distractionRatio: 1, distractionLabel: 'Phone' } });
+      expect(ev.classification).toBe('distracted');
+    });
+
+    it('is not used without input monitoring', () => {
+      expect(reading(0, { input: null }).reasons.some((r) => r.code === 'active-reading')).toBe(false);
+    });
   });
 
   it('marks prolonged inactivity on a non-study app as distracted', () => {

@@ -14,6 +14,8 @@ export interface WindowObservation {
   /** 0–1 relevance of the foreground application; null when the app is excluded. */
   relevance: number | null;
   matchedRule: string | null;
+  /** The window shows one of the session's monitored files (the user's own draft). */
+  isDraft?: boolean;
 }
 
 export interface InputObservation {

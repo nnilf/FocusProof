@@ -71,6 +71,7 @@ export const settingsPatchSchema = z.object({
   engine: z
     .object({
       inactivityThresholdSec: z.number().int().min(10).max(3600),
+      readingPauseSec: z.number().int().min(30).max(900),
       awayThresholdSec: z.number().int().min(30).max(7200),
       absenceThresholdSec: z.number().int().min(10).max(1800),
       offScreenPolicy: z.enum(['ignore', 'neutral', 'distracted']),

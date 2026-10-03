@@ -12,6 +12,8 @@ export type OffScreenPolicy = 'ignore' | 'neutral' | 'distracted';
 
 export interface EngineSettings {
   inactivityThresholdSec: number;
+  /** Study material counts as being read (productive) this long after the last scroll or key. */
+  readingPauseSec: number;
   awayThresholdSec: number;
   /** Webcam-confirmed absence (with no input) longer than this is away, regardless of awayThresholdSec. */
   absenceThresholdSec: number;

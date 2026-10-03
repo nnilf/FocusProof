@@ -19,6 +19,7 @@ export const AI_ASSISTANT_DEFAULTS = {
 export const DEFAULT_SETTINGS: Settings = {
   engine: {
     inactivityThresholdSec: 120,
+    readingPauseSec: 180,
     awayThresholdSec: 300,
     absenceThresholdSec: 60,
     offScreenPolicy: 'neutral',

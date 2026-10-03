@@ -264,6 +264,7 @@ export function SettingsPage() {
               <Slider label="Neutral above" value={e.neutralThreshold} min={0.05} max={0.8} step={0.01} format={(v) => v.toFixed(2)} onChange={(v) => setEngine({ neutralThreshold: v })} />
               <Slider label="Neutral time counted as study" value={e.neutralContribution} min={0} max={1} step={0.05} format={(v) => formatPct(v)} onChange={(v) => setEngine({ neutralContribution: v })} />
               <Slider label="Inactive after" value={e.inactivityThresholdSec} min={30} max={900} step={15} format={minutes} onChange={(v) => setEngine({ inactivityThresholdSec: v })} />
+              <Slider label="Reading pause" value={e.readingPauseSec} min={30} max={900} step={15} format={minutes} onChange={(v) => setEngine({ readingPauseSec: v })} />
               <Slider label="Away after" value={e.awayThresholdSec} min={60} max={1800} step={30} format={minutes} onChange={(v) => setEngine({ awayThresholdSec: v })} />
               <Slider label="Away after leaving the webcam" value={e.absenceThresholdSec} min={15} max={600} step={15} format={(v) => (v < 60 ? `${v} s` : minutes(v))} onChange={(v) => setEngine({ absenceThresholdSec: v })} />
               <Slider label="Check every" value={draft.analysisIntervalSec} min={2} max={30} step={1} format={(v) => `${v} s`} onChange={(v) => update({ ...draft, analysisIntervalSec: v })} />

@@ -72,10 +72,12 @@ Every few seconds, FocusProof labels what you're doing:
 
 | Label | Meaning | Counts towards ALT |
 | --- | --- | --- |
-| Productive | Working in a study app, typing, editing your files | Fully |
-| Neutral | Unclear, e.g. reading with little typing | Half |
+| Productive | Working in a study app, typing, editing your files, or reading study material | Fully |
+| Neutral | Unclear, e.g. your assignment open with no edits, or a long pause while reading | Half |
 | Distracted | Distracting sites or apps, or inactive on non-study apps | No |
 | Away | Not at the computer | No |
+
+Reading counts as productive while you scroll or turn pages at least every 3 minutes (5 with the webcam on and seeing you face the screen). Change the time under **Settings → Advanced → Reading pause**.
 
 AI chat assistants such as Claude and ChatGPT count as study sites, since they're often used for research and testing ideas. Remove them under **Settings → Websites** if you'd rather they didn't.
 

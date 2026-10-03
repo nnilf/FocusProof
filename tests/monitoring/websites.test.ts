@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AI_ASSISTANT_DEFAULTS, DEFAULT_SETTINGS, addAiAssistants } from '@shared/settings/defaults';
 import { findDomain, normaliseDomain } from '@shared/domains';
-import { classifyApplication, type RelevanceContext } from '../../src/main/monitoring/relevanceRules';
+import { classifyApplication, isDraftTitle, type RelevanceContext } from '../../src/main/monitoring/relevanceRules';
 
 const ctx: RelevanceContext = { rules: DEFAULT_SETTINGS.apps, assignmentKeywords: ['urban heat islands'] };
 
@@ -71,5 +71,21 @@ describe('AI chat assistants', () => {
   it('respects an assistant the user marked as distracting', () => {
     const old = { ...DEFAULT_SETTINGS.apps, productiveDomains: [], distractingDomains: ['chatgpt.com'] };
     expect(addAiAssistants(old).productiveDomains).not.toContain('chatgpt.com');
+  });
+});
+
+describe('isDraftTitle', () => {
+  const targets = [
+    { path: 'C:\\Uni\\Essay.docx', kind: 'file' as const },
+    { path: 'C:\\Uni\\Sources', kind: 'folder' as const },
+  ];
+  it('recognises a window showing a monitored file', () => {
+    expect(isDraftTitle('Essay.docx - Word', targets)).toBe(true);
+    expect(isDraftTitle('Essay - Compatibility Mode - Word', targets)).toBe(true);
+  });
+  it('ignores other windows and folders', () => {
+    expect(isDraftTitle('heat-islands.pdf - Adobe Acrobat', targets)).toBe(false);
+    expect(isDraftTitle('Sources - File Explorer', targets)).toBe(false);
+    expect(isDraftTitle(null, targets)).toBe(false);
   });
 });
