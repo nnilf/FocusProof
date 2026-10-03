@@ -7,9 +7,9 @@ const leftWorkArea = { x: -1920, y: 0, width: 1920, height: 1040 };
 const size = { width: 18, height: 18 };
 
 describe('cornerPosition', () => {
-  it('pins to each corner of the work area with a margin', () => {
+  it('pins to each corner of the work area with a margin, clear of the window buttons', () => {
     expect(cornerPosition(leftWorkArea, size, 'top-left')).toEqual({ x: -1908, y: 12 });
-    expect(cornerPosition(leftWorkArea, size, 'top-right')).toEqual({ x: -30, y: 12 });
+    expect(cornerPosition(leftWorkArea, size, 'top-right')).toEqual({ x: -170, y: 12 }); // clear of window buttons
     expect(cornerPosition(leftWorkArea, size, 'bottom-left')).toEqual({ x: -1908, y: 1010 });
     expect(cornerPosition(leftWorkArea, size, 'bottom-right')).toEqual({ x: -30, y: 1010 });
   });
