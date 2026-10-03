@@ -128,6 +128,7 @@ export class DemoDataService {
     const engine = new WeightedSignalEngine();
     const engineSettings = DEFAULT_SETTINGS.engine;
     const today = startOfDay(Date.now());
+    let todayCursor = Date.now() - 30 * 60_000;
 
     this.db.transaction(() => {
       DEMO_ASSIGNMENTS.forEach((demo, idx) => {
@@ -140,9 +141,17 @@ export class DemoDataService {
         for (const back of daysBack) {
           if (rand() < 0.2 && back !== 0) continue;
           const hour = 9 + Math.floor(rand() * 10);
-          const startedAt = addDays(today, -back) + hour * 3_600_000 + Math.floor(rand() * 40) * 60_000;
-          if (startedAt > Date.now() - 2 * 3_600_000) continue;
+          let startedAt = addDays(today, -back) + hour * 3_600_000 + Math.floor(rand() * 40) * 60_000;
           const steps = Math.floor((35 + rand() * 85) * 2);
+          if (back === 0) {
+            // Today's sessions run back to back, ending half an hour ago, so the demo always has
+            // a today to show (unless it's too early in the morning).
+            startedAt = todayCursor - steps * STEP_MS;
+            if (startedAt < today + 7 * 3_600_000) continue;
+            todayCursor = startedAt - 45 * 60_000;
+          } else if (startedAt > Date.now() - 2 * 3_600_000) {
+            continue;
+          }
           const session = this.sessions.create({
             assignmentId: assignment.id,
             startedAt,

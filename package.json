@@ -11,6 +11,7 @@
     "postinstall": "electron-builder install-app-deps && node scripts/fetch-models.mjs",
     "app": "node scripts/launch.mjs",
     "shortcut": "node scripts/launch.mjs --shortcut",
+    "screenshots": "node scripts/screenshots.mjs",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
     "preview": "electron-vite preview",

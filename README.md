@@ -4,6 +4,11 @@ FocusProof is a study timer that only counts the time you're actually working. I
 
 Everything runs and stays on your computer.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/today-dark.png">
+  <img src="docs/screenshots/today-light.png" alt="FocusProof's Today screen: today's study time, a strip of the day's sessions, and the start bar">
+</picture>
+
 ## Starting the app
 
 You need **Windows 10/11** and **[Node.js](https://nodejs.org) 22 or newer**.
@@ -25,6 +30,29 @@ npm run shortcut
 2. Pick it in the start bar and press **Start**. The window switches to a simple timer. Work as normal.
 3. Press **End session** to see your report: ALT, a timeline of your session, and words written.
 4. **Today** shows the day as a strip, with each session at the time it happened. **Progress** shows your study time over the last 7, 30 or 90 days, and every session.
+
+<table>
+  <tr>
+    <td width="50%"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/session-dark.png">
+  <img src="docs/screenshots/session-light.png" alt="A running session: a large timer with the time studied so far">
+</picture><br>While you work, the window is just a timer.</td>
+    <td width="50%"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/report-dark.png">
+  <img src="docs/screenshots/report-light.png" alt="A session report with a colour-coded timeline">
+</picture><br>Each report shows when you were focused, and why.</td>
+  </tr>
+  <tr>
+    <td width="50%"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/progress-dark.png">
+  <img src="docs/screenshots/progress-light.png" alt="Progress: study time per day, where the time went and best hours">
+</picture><br>Progress over the last 7, 30 or 90 days.</td>
+    <td width="50%"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/settings-dark.png">
+  <img src="docs/screenshots/settings-light.png" alt="Settings: each monitoring source with what it collects">
+</picture><br>Every source can be switched off, with what it collects.</td>
+  </tr>
+</table>
 
 Click any block on a report's timeline to see why it was classified that way.
 
@@ -74,6 +102,7 @@ npm test           # unit tests
 npm run lint       # lint
 npm run typecheck  # type checks
 npm run dist       # build a Windows installer into release/
+npm run screenshots  # regenerate the README screenshots from demo data
 ```
 
 The code is split into three parts:
@@ -83,3 +112,7 @@ The code is split into three parts:
 - `src/shared`: types shared by both.
 
 The scoring engine is pure and swappable: implement `LearningTimeEngine` and register it with `registerEngine()`.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
