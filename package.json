@@ -1,7 +1,7 @@
 {
   "name": "focusproof",
   "productName": "FocusProof",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Personal learning accountability and analytics — estimates Actual Learning Time from local behavioural signals.",
   "author": "Flinn Mort",
   "license": "MIT",
