@@ -22,3 +22,9 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
 npmRebuild: false
+# Installed copies update from these releases (latest.yml); the installer is unsigned, so no publisherName.
+publish:
+  provider: github
+  owner: nnilf
+  repo: FocusProof
+  releaseType: release

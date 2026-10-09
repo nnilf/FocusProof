@@ -26,6 +26,13 @@ export interface AppInfo {
   };
 }
 
+/** Updates from GitHub releases; 'unavailable' outside an installed build. */
+export interface UpdateStatus {
+  state: 'unavailable' | 'idle' | 'checking' | 'downloading' | 'ready' | 'error';
+  /** The version being downloaded or ready to install. */
+  version: string | null;
+}
+
 export interface DisplayInfo {
   id: number;
   label: string;
@@ -80,6 +87,8 @@ export interface IpcContract {
   'setup:status': { req: Record<string, never>; res: { show: boolean } };
   'setup:complete': { req: Record<string, never>; res: void };
   'apps:recent': { req: Record<string, never>; res: string[] };
+  'update:status': { req: Record<string, never>; res: UpdateStatus };
+  'update:install': { req: Record<string, never>; res: void };
 }
 
 export type IpcChannel = keyof IpcContract;
@@ -91,9 +100,10 @@ export interface IpcEvents {
   'session:live': LiveStatus | null;
   'session:ended': { sessionId: number };
   'data:changed': { scope: 'assignments' | 'sessions' | 'settings' | 'all' };
+  'update:status': UpdateStatus;
 }
 export type IpcEventName = keyof IpcEvents;
-export const IPC_EVENT_NAMES: readonly IpcEventName[] = ['session:live', 'session:ended', 'data:changed'];
+export const IPC_EVENT_NAMES: readonly IpcEventName[] = ['session:live', 'session:ended', 'data:changed', 'update:status'];
 
 /** Result envelope so errors cross the bridge with a readable message instead of a stack trace. */
 export type IpcResult<T> = { ok: true; data: T } | { ok: false; error: string };

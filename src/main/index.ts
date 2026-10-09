@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, powerMonitor, screen, type IpcMainInvokeEvent } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -28,6 +29,7 @@ import { CheckService } from './services/CheckService';
 import { DemoDataService } from './services/DemoDataService';
 import { ReportService } from './services/ReportService';
 import { SessionManager } from './services/SessionManager';
+import { UpdateService } from './services/UpdateService';
 import { AppTray } from './tray';
 import { TargetWindow } from './calibration/TargetWindow';
 import { OverlayWindow } from './overlay/OverlayWindow';
@@ -127,6 +129,13 @@ async function bootstrap(): Promise<void> {
     hideTarget: () => target.hide(),
     isSessionRunning: () => sessionManager.activeSessionId !== null,
   });
+
+  const updates = new UpdateService({
+    updater: app.isPackaged ? autoUpdater : null,
+    isSessionRunning: () => sessionManager.activeSessionId !== null,
+    onStatus: (status) => emit('update:status', status),
+  });
+  updates.start();
 
   // Fresh installs get the setup wizard once; existing users find it in Settings.
   const firstRun = settings.getValue('settings') === undefined && !sessions.hasOwnSessions();
@@ -243,6 +252,9 @@ async function bootstrap(): Promise<void> {
       'setup:status': () => ({ show: firstRun && settings.getValue('setupCompleted') !== true }),
       'setup:complete': () => settings.setValue('setupCompleted', true),
       'apps:recent': () => sessions.recentApps(40),
+      'update:status': () => updates.status,
+      // Quitting runs the usual shutdown below; the installer starts once the app has quit.
+      'update:install': () => updates.install(),
       'privacy:deleteAll': () => {
         if (sessionManager.activeSessionId) throw new Error('End the running session first');
         db?.exec('DELETE FROM sessions; DELETE FROM assignments;');
@@ -308,6 +320,7 @@ async function bootstrap(): Promise<void> {
     if (quitting) return;
     event.preventDefault();
     quitting = true;
+    updates.stop();
     // Keep the session marked active so it can be resumed or recovered on next launch.
     calibration.stop();
     check.close();

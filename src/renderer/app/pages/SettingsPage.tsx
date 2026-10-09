@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import type { MonitoringToggles, OffScreenPolicy, Settings, SettingsPatch, WeightKey } from '@shared/types';
 import { WEIGHT_KEYS } from '@shared/types';
 import { normaliseDomain } from '@shared/domains';
-import { call } from '../lib/api';
+import type { UpdateStatus } from '@shared/ipc/contract';
+import { call, onEvent } from '../lib/api';
 import { useApi } from '../hooks/useApi';
 import { ErrorText, Field, Loading, Toggle } from '../components/ui';
 import { ChipListEditor } from '../components/ChipListEditor';
@@ -84,6 +85,34 @@ function validate(s: Settings): string | null {
   if (s.engine.neutralThreshold >= s.engine.productiveThreshold) return 'The neutral threshold must be lower than the productive threshold.';
   if (s.engine.awayThresholdSec < s.engine.inactivityThresholdSec) return 'The away threshold must be at least the inactivity threshold.';
   return null;
+}
+
+/** The installed version, with a restart button once an update has downloaded. */
+function UpdateSection(props: { version: string | undefined }) {
+  const [status, setStatus] = useState<UpdateStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    void call('update:status', {}).then(setStatus);
+    return onEvent('update:status', setStatus);
+  }, []);
+  const install = (): void => {
+    setError(null);
+    call('update:install', {}).catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
+  };
+  return (
+    <section className="settings-section">
+      <h2>Updates</h2>
+      <div className="row">
+        <span className="secondary num">Version {props.version ?? '…'}</span>
+        {status?.state === 'ready' && (
+          <button className="btn primary" onClick={install}>
+            Restart to update to v{status.version}
+          </button>
+        )}
+      </div>
+      <ErrorText error={error} />
+    </section>
+  );
 }
 
 export function SettingsPage() {
@@ -301,6 +330,8 @@ export function SettingsPage() {
           </div>
         </details>
       </section>
+
+      <UpdateSection version={info.data?.version} />
 
       <section className="settings-section">
         <h2>Your data</h2>

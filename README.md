@@ -18,6 +18,8 @@ You need **Windows 10/11**.
 
 Download **FocusProof Setup** from the [latest release](https://github.com/nnilf/FocusProof/releases/latest) and run it. The installer isn't code-signed, so Windows may warn you: choose **More info → Run anyway**.
 
+After that it keeps itself up to date: new versions download in the background and install when you close FocusProof, or straight away with **Settings → Updates → Restart to update**.
+
 ### From the source
 
 You also need **[Node.js](https://nodejs.org) 22 or newer**.
@@ -106,7 +108,7 @@ ALT is an estimate based on your activity. It can't measure how much you learned
 
 ## Privacy
 
-- **Nothing leaves your computer.** There are no accounts, no uploads and no tracking.
+- **Nothing leaves your computer.** There are no accounts, no uploads and no tracking. The installed app only contacts GitHub, to check for and download new versions.
 - **Webcam:** off by default. When it's on, only "present" and a focus score are saved. No video or images.
 - **Screen:** only a small thumbnail is checked for changes in memory. Screenshots are never saved.
 - **Keyboard and mouse:** only *how much* you use them. Keys are never recorded.
@@ -139,6 +141,8 @@ The code is split into three parts:
 - `src/shared`: types shared by both.
 
 The scoring engine is pure and swappable: implement `LearningTimeEngine` and register it with `registerEngine()`.
+
+To release, bump `version` in `package.json`, commit, then `git tag vX.Y.Z` and `git push --follow-tags`. The Release workflow builds the installer and publishes it with the `latest.yml` that installed copies update from.
 
 ## Licence
 

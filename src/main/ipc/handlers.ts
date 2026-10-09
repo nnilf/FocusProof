@@ -59,6 +59,8 @@ const SCHEMAS: { [C in IpcChannel]: z.ZodType } = {
   'setup:status': emptySchema,
   'setup:complete': emptySchema,
   'apps:recent': emptySchema,
+  'update:status': emptySchema,
+  'update:install': emptySchema,
 };
 
 export function registerHandlers(handlers: HandlerMap, isTrustedSender: (event: IpcMainInvokeEvent) => boolean): void {
