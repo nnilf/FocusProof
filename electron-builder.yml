@@ -27,4 +27,5 @@ publish:
   provider: github
   owner: nnilf
   repo: FocusProof
-  releaseType: release
+  # The release workflow creates the draft first and publishes it once every file is uploaded.
+  releaseType: draft
