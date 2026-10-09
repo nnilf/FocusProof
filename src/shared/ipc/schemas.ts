@@ -10,6 +10,8 @@ export const gazePointSchema = z.object({
   pitchDeg: z.number().min(-90).max(90),
   eyeX: eyeValue,
   eyeY: eyeValue,
+  targetX: z.number().min(0).max(1).optional(),
+  targetY: z.number().min(0).max(1).optional(),
 });
 
 export const focusZoneSchema = z.object({

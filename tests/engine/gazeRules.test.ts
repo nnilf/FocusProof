@@ -5,7 +5,7 @@ import { settingsPatchSchema } from '@shared/ipc/schemas';
 import { WeightedSignalEngine } from '../../src/main/engine/WeightedSignalEngine';
 import { INITIAL_ENGINE_STATE } from '../../src/main/engine/LearningTimeEngine';
 import { FocusAnalyzer, attentionFromPose, classifyGaze, type ZoneLike } from '../../src/main/monitoring/focus/FocusAnalyzer';
-import { eyeDirection, fitEyeGain, NO_EYE_GAIN } from '@shared/focus/gaze';
+import { eyeDirection, eyeXSign, fitEyeGain, gazeOf, NO_EYE_GAIN } from '@shared/focus/gaze';
 import type { GazePoint } from '@shared/types';
 import { buildInsights } from '../../src/main/services/InsightService';
 import { summarizeSession } from '../../src/main/engine/summary';
@@ -163,6 +163,51 @@ describe('multi-point calibration with eye direction', () => {
   it('accepts samples and stored zones with and without eye data', () => {
     const parsed = settingsPatchSchema.parse({ camera: { zones: [{ kind: 'screen', displayId: 1, label: 'laptop', yawDeg: 0, pitchDeg: 5, points: laptop.points }], eyeGain: { x: 0, y: 1 } } });
     expect(parsed.camera?.zones?.[0]?.points).toHaveLength(10);
+    const targeted = settingsPatchSchema.parse({ camera: { zones: [{ kind: 'screen', displayId: 1, label: 'laptop', yawDeg: 0, pitchDeg: 5, points: [{ yawDeg: 0, pitchDeg: 0, eyeX: 0, eyeY: 0, targetX: 0.1, targetY: 0.9 }] }] } });
+    expect(targeted.camera?.zones?.[0]?.points?.[0]).toMatchObject({ targetX: 0.1, targetY: 0.9 });
+  });
+});
+
+describe('horizontal eye direction', () => {
+  // Two displays side by side; looking across each one, the head does half the turn and the eyes the rest.
+  const TARGETS = [0.1, 0.5, 0.9].flatMap((tx) => [0.1, 0.5, 0.9].map((ty) => ({ tx, ty })));
+  const display = (label: string, displayId: number, centreYaw: number, eyeSign: number, withTargets = true): ZoneLike => {
+    const points: GazePoint[] = TARGETS.map(({ tx, ty }) => ({
+      yawDeg: centreYaw + (0.5 - tx) * 15,
+      pitchDeg: (ty - 0.5) * 10,
+      eyeX: eyeSign * (0.5 - tx) * 0.5,
+      eyeY: 0,
+      ...(withTargets ? { targetX: tx, targetY: ty } : {}),
+    }));
+    return { kind: 'screen', displayId, label, yawDeg: centreYaw, pitchDeg: 0, points };
+  };
+  const desk = (eyeSign: number, withTargets = true): ZoneLike[] => [
+    display('left', 1, 22, eyeSign, withTargets),
+    display('right', 2, -22, eyeSign, withTargets),
+  ];
+  const leftEdge = (z: ZoneLike) => z.points?.find((p) => p.targetX === 0.1 && p.targetY === 0.5) as GazePoint;
+  const rightEdge = (z: ZoneLike) => z.points?.find((p) => p.targetX === 0.9 && p.targetY === 0.5) as GazePoint;
+
+  it('reads the sign from where the dots were', () => {
+    expect(eyeXSign(desk(1))).toBe(1);
+    expect(eyeXSign(desk(-1))).toBe(-1);
+  });
+
+  it('falls back to the head turn for calibrations without dot positions', () => {
+    expect(eyeXSign(desk(1, false))).toBe(1);
+    expect(eyeXSign(desk(-1, false))).toBe(-1);
+  });
+
+  it('never fits a gain that moves the gaze against the eyes', () => {
+    for (const eyeSign of [1, -1]) {
+      const zones = desk(eyeSign);
+      const gain = fitEyeGain(zones);
+      expect(Math.sign(gain.x) * eyeSign).not.toBe(-1);
+      for (const z of zones) {
+        // Looking left of the display reads further left (higher yaw) than looking right of it.
+        expect(gazeOf(leftEdge(z), gain).x).toBeGreaterThan(gazeOf(rightEdge(z), gain).x);
+      }
+    }
   });
 });
 

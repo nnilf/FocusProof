@@ -151,7 +151,17 @@ const toStored = (z: FocusZone): FocusZone => ({
   label: z.label,
   yawDeg: z.yawDeg,
   pitchDeg: z.pitchDeg,
-  ...(z.points?.length ? { points: z.points.map(({ yawDeg, pitchDeg, eyeX, eyeY }) => ({ yawDeg, pitchDeg, eyeX, eyeY })) } : {}),
+  ...(z.points?.length
+    ? {
+        points: z.points.map(({ yawDeg, pitchDeg, eyeX, eyeY, targetX, targetY }) => ({
+          yawDeg,
+          pitchDeg,
+          eyeX,
+          eyeY,
+          ...(targetX !== undefined && targetY !== undefined ? { targetX, targetY } : {}),
+        })),
+      }
+    : {}),
 });
 
 /** A short tone, for when the user is looking away from the screen. */
@@ -283,7 +293,7 @@ export function CameraCalibration(props: { zones: FocusZone[]; lookAwayDeg: numb
         const points: GazePoint[] = [];
         for (const [i, spot] of SCREEN_POINTS.entries()) {
           setStep({ display: d.id, point: spot, label: `${nameOf(d)} · ${i + 1}/${SCREEN_POINTS.length}` });
-          points.push(await capture(d.id, spot));
+          points.push({ ...(await capture(d.id, spot)), targetX: spot.x, targetY: spot.y });
         }
         const centre = points[0] as GazePoint;
         fresh.push({ kind: 'screen', displayId: d.id, label: nameOf(d), yawDeg: centre.yawDeg, pitchDeg: centre.pitchDeg, points });

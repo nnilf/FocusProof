@@ -193,6 +193,53 @@ function scoreGain(zones: readonly ZoneLike[], gain: EyeGain): number {
   return total ? correct / total + (0.1 * separation) / total : 0;
 }
 
+const mean = (values: number[]): number => values.reduce((a, b) => a + b, 0) / values.length;
+
+function correlation(a: number[], b: number[]): number {
+  const ma = mean(a);
+  const mb = mean(b);
+  let ab = 0;
+  let aa = 0;
+  let bb = 0;
+  a.forEach((v, i) => {
+    const da = v - ma;
+    const db = (b[i] ?? 0) - mb;
+    ab += da * db;
+    aa += da * da;
+    bb += db * db;
+  });
+  return aa && bb ? ab / Math.sqrt(aa * bb) : 0;
+}
+
+/** Below these, the calibration does not show which way the eyes turn. */
+const MIN_TARGET_EYE_DIFF = 0.05;
+const MIN_HEAD_EYE_CORRELATION = 0.3;
+
+/**
+ * Which way the horizontal eye blendshapes point, as a sign for the gain (MediaPipe's left/right
+ * naming is not trusted). Looking at a dot on the left of a display must read further left than one
+ * on the right; calibrations without dot positions fall back to the head, which turns the same way
+ * as the eyes. 0 when the data does not say.
+ */
+export function eyeXSign(zones: readonly ZoneLike[]): -1 | 0 | 1 {
+  let byTarget = 0;
+  let byHead = 0;
+  for (const z of zones) {
+    if (!zoneHasEye(z)) continue;
+    const points = zonePoints(z);
+    const left = points.filter((p) => p.targetX !== undefined && p.targetX < 0.5);
+    const right = points.filter((p) => p.targetX !== undefined && p.targetX > 0.5);
+    if (left.length && right.length) {
+      byTarget += mean(left.map((p) => p.eyeX ?? 0)) - mean(right.map((p) => p.eyeX ?? 0));
+    } else if (points.length >= 3) {
+      byHead += correlation(points.map((p) => p.yawDeg), points.map((p) => p.eyeX ?? 0));
+    }
+  }
+  if (Math.abs(byTarget) >= MIN_TARGET_EYE_DIFF) return byTarget > 0 ? 1 : -1;
+  if (byTarget === 0 && Math.abs(byHead) >= MIN_HEAD_EYE_CORRELATION) return byHead > 0 ? 1 : -1;
+  return 0;
+}
+
 /**
  * Picks how much eye direction counts, from multi-point calibration data. Head pose alone (gain 0)
  * is kept unless eye direction separates the zones clearly better, so it can never make things worse.
@@ -202,8 +249,11 @@ export function fitEyeGain(zones: readonly ZoneLike[]): EyeGain {
   if (withEye.length < 2 || zones.length < 2) return NO_EYE_GAIN;
   let best = NO_EYE_GAIN;
   let bestScore = scoreGain(zones, NO_EYE_GAIN);
-  // The horizontal sign of the eye blendshapes is not trusted, so both signs are tried.
-  for (let x = -1.5; x <= 1.5; x += 0.25) {
+  // Only the sign the calibration shows is tried horizontally: separating the zones alone can
+  // favour a reversed gain, which moves the gaze against the eyes.
+  const sign = eyeXSign(withEye);
+  for (let step = 0; step <= (sign ? 6 : 0); step++) {
+    const x = sign * step * 0.25 || 0;
     for (let y = 0; y <= 1.5; y += 0.25) {
       const score = scoreGain(zones, { x, y });
       if (score > bestScore + 0.01) {

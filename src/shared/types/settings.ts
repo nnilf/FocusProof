@@ -51,6 +51,9 @@ export interface GazePoint {
   pitchDeg: number;
   eyeX: number | null;
   eyeY: number | null;
+  /** Where the dot was on its display (0–1); absent for areas off the screens and older calibrations. */
+  targetX?: number;
+  targetY?: number;
 }
 
 export interface FocusZone {
