@@ -241,6 +241,16 @@ export function eyeXSign(zones: readonly ZoneLike[]): -1 | 0 | 1 {
 }
 
 /**
+ * A refitted gain when the stored one moves the gaze against the eyes horizontally (calibrations
+ * from before the sign was checked), or null when the stored gain is fine.
+ */
+export function correctedEyeGain(zones: readonly ZoneLike[], gain: EyeGain): EyeGain | null {
+  if (gain.x === 0) return null;
+  const sign = eyeXSign(zones.filter((z) => (z.points?.length ?? 0) > 1 && zoneHasEye(z)));
+  return sign !== 0 && Math.sign(gain.x) !== sign ? fitEyeGain(zones) : null;
+}
+
+/**
  * Picks how much eye direction counts, from multi-point calibration data. Head pose alone (gain 0)
  * is kept unless eye direction separates the zones clearly better, so it can never make things worse.
  */

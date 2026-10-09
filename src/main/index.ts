@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { CAMERA_CHANNELS } from '@shared/ipc/camera';
 import { CHECK_CHANNELS } from '@shared/ipc/check';
 import { startOfDay } from '@shared/dates';
+import { correctedEyeGain } from '@shared/focus/gaze';
 import type { IpcEventName, IpcEvents } from '@shared/ipc/contract';
 import { OVERLAY_CHANNELS } from '@shared/ipc/overlay';
 import { cameraSampleSchema, cameraStatusSchema, overlayResizeSchema } from '@shared/ipc/schemas';
@@ -69,6 +70,13 @@ async function bootstrap(): Promise<void> {
   const assignments = new AssignmentRepository(db);
   const sessions = new SessionRepository(db);
   const settings = new SettingsRepository(db);
+  // Calibrations from before 0.3.1 may have saved a reversed eye gain; refit it from their points.
+  const stored = settings.get().camera;
+  const eyeGain = correctedEyeGain(stored.zones, stored.eyeGain);
+  if (eyeGain) {
+    settings.update({ camera: { eyeGain } });
+    console.log('[calibration] corrected reversed eye gain', stored.eyeGain, '->', eyeGain);
+  }
   const reports = new ReportService(sessions, settings);
   const analytics = new AnalyticsService(sessions, assignments);
   const demo = new DemoDataService(db, assignments, sessions, settings, reports);

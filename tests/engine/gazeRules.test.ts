@@ -5,7 +5,7 @@ import { settingsPatchSchema } from '@shared/ipc/schemas';
 import { WeightedSignalEngine } from '../../src/main/engine/WeightedSignalEngine';
 import { INITIAL_ENGINE_STATE } from '../../src/main/engine/LearningTimeEngine';
 import { FocusAnalyzer, attentionFromPose, classifyGaze, type ZoneLike } from '../../src/main/monitoring/focus/FocusAnalyzer';
-import { eyeDirection, eyeXSign, fitEyeGain, gazeOf, NO_EYE_GAIN } from '@shared/focus/gaze';
+import { correctedEyeGain, eyeDirection, eyeXSign, fitEyeGain, gazeOf, NO_EYE_GAIN } from '@shared/focus/gaze';
 import type { GazePoint } from '@shared/types';
 import { buildInsights } from '../../src/main/services/InsightService';
 import { summarizeSession } from '../../src/main/engine/summary';
@@ -196,6 +196,28 @@ describe('horizontal eye direction', () => {
   it('falls back to the head turn for calibrations without dot positions', () => {
     expect(eyeXSign(desk(1, false))).toBe(1);
     expect(eyeXSign(desk(-1, false))).toBe(-1);
+  });
+
+  describe('calibrations saved with a reversed gain', () => {
+    // A real calibration from before dot positions were recorded: a display to the left, the main
+    // one ahead and a laptop on the left, saved with the reversed gain the old fit picked.
+    const pt = (yawDeg: number, pitchDeg: number, eyeX: number, eyeY: number): GazePoint => ({ yawDeg, pitchDeg, eyeX, eyeY });
+    const saved: ZoneLike[] = [
+      { kind: 'screen', displayId: 1, label: 'display 1', yawDeg: 26, pitchDeg: 8.8, points: [pt(26, 8.8, 0.038, 0.068), pt(35.9, 6.6, 0.427, 0.095), pt(31.1, 6.4, 0.098, 0.09), pt(18.7, 3.2, 0.003, -0.057), pt(19.2, 13.1, -0.036, -0.009), pt(29.3, 17.8, 0.25, 0.208), pt(39.7, 16.3, 0.428, 0.453)] },
+      { kind: 'screen', displayId: 2, label: 'display 2 (main)', yawDeg: -2.7, pitchDeg: 6.7, points: [pt(-2.7, 6.7, 0.125, 0.045), pt(9.5, 2.4, 0.177, 0.088), pt(-2.4, 1.8, 0.158, 0.123), pt(-14, 0.7, 0.18, 0.097), pt(-13.8, 11.3, 0.116, 0.107), pt(-1.2, 11.6, 0.097, 0.065), pt(11.9, 11.9, -0.016, -0.031)] },
+      { kind: 'distraction', displayId: null, label: 'Laptop', yawDeg: 33, pitchDeg: 14, points: [pt(32.5, 13.5, 0.583, 0.078), pt(33, 14, 0.518, 0.471), pt(29.3, 19.1, 0.231, 0.453)] },
+    ];
+
+    it('refits a reversed gain', () => {
+      const fixed = correctedEyeGain(saved, { x: -1, y: 0 });
+      expect(fixed).not.toBeNull();
+      expect(fixed?.x).toBeGreaterThanOrEqual(0);
+    });
+
+    it('leaves a gain that matches the eyes, or ignores them, alone', () => {
+      expect(correctedEyeGain(saved, { x: 0.5, y: 0 })).toBeNull();
+      expect(correctedEyeGain(saved, { x: 0, y: 0.25 })).toBeNull();
+    });
   });
 
   it('never fits a gain that moves the gaze against the eyes', () => {
